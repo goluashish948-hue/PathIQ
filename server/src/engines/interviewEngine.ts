@@ -132,68 +132,286 @@ export class InterviewEngine {
     currentQuestionText: string = '',
     studentContext?: InterviewStudentContext
   ): TurnEvaluationResult {
-    const textLower = candidateText.toLowerCase();
+    const trimmed = (candidateText || '').trim();
+    const textLower = trimmed.toLowerCase();
+    const qLower = (currentQuestionText || '').toLowerCase();
+    const role = studentContext?.targetCareer || 'Software & ML Engineer';
 
-    // Check for core concepts mentioned in answer
-    const mentionsImbalance = textLower.includes('imbalance') || textLower.includes('rare') || textLower.includes('class');
-    const mentionsPrecisionRecall = textLower.includes('precision') || textLower.includes('recall') || textLower.includes('false positive') || textLower.includes('f1');
-    const mentionsThresholdOrSmote = textLower.includes('threshold') || textLower.includes('scale_pos_weight') || textLower.includes('smote') || textLower.includes('cost');
-    const mentionsLatencyOrCache = textLower.includes('redis') || textLower.includes('cache') || textLower.includes('latency') || textLower.includes('fastapi') || textLower.includes('kafka');
-    const mentionsPythonScope = textLower.includes('scope') || textLower.includes('mutable') || textLower.includes('none') || textLower.includes('pure function') || textLower.includes('closure');
-    const mentionsSqlJoins = textLower.includes('left join') || textLower.includes('inner join') || textLower.includes('null') || textLower.includes('index') || textLower.includes('cartesian');
+    // 1. Detect empty, trivial, or evasive answers
+    const isTrivial =
+      trimmed.length < 25 ||
+      /^(i don'?t know|no idea|skip|not sure|pass|na|none|\?+|idk|hello|hi)$/i.test(trimmed);
 
+    if (isTrivial) {
+      return {
+        score: 28,
+        breakdown: {
+          technicalCorrectness: 6,
+          problemSolving: 7,
+          communicationStructure: 8,
+          domainRelevance: 7,
+        },
+        feedback:
+          'Your answer was too brief or evasive for a senior technical interview. In real industry interviews, even when unsure of the exact syntax, you are expected to articulate first principles, describe your conceptual approach, or outline how you would investigate the solution.',
+        strengths: ['Prompt response submission under interview pressure.'],
+        improvements: [
+          'Avoid one-line or evasive answers; explain your thought process out loud.',
+          'Break the problem down into components: inputs, transformation logic, and edge-case handling.',
+          'Explain trade-offs and assumptions rather than remaining silent.',
+        ],
+        followUpQuestion:
+          'Let\'s reset: If you encountered this exact challenge on day one in production, what documentation, diagnostic logs, or senior team members would you consult first to resolve it?',
+      };
+    }
+
+    // 2. Multi-domain concept detection
+    const mentionsImbalance =
+      textLower.includes('imbalance') ||
+      textLower.includes('rare') ||
+      textLower.includes('minority') ||
+      textLower.includes('class');
+
+    const mentionsPrecisionRecall =
+      textLower.includes('precision') ||
+      textLower.includes('recall') ||
+      textLower.includes('false positive') ||
+      textLower.includes('false negative') ||
+      textLower.includes('f1') ||
+      textLower.includes('auc') ||
+      textLower.includes('roc');
+
+    const mentionsThresholdOrCalibration =
+      textLower.includes('threshold') ||
+      textLower.includes('calibration') ||
+      textLower.includes('scale_pos_weight') ||
+      textLower.includes('cost matrix') ||
+      textLower.includes('cutoff');
+
+    const mentionsSmoteOrSampling =
+      textLower.includes('smote') ||
+      textLower.includes('oversampl') ||
+      textLower.includes('undersampl') ||
+      textLower.includes('resampl');
+
+    const mentionsModelArch =
+      textLower.includes('xgboost') ||
+      textLower.includes('random forest') ||
+      textLower.includes('gradient boost') ||
+      textLower.includes('neural') ||
+      textLower.includes('transformer') ||
+      textLower.includes('classifier') ||
+      textLower.includes('regression') ||
+      textLower.includes('feature');
+
+    const mentionsLatencyOrCache =
+      textLower.includes('redis') ||
+      textLower.includes('cache') ||
+      textLower.includes('latency') ||
+      textLower.includes('fastapi') ||
+      textLower.includes('kafka') ||
+      textLower.includes('queue') ||
+      textLower.includes('throughput') ||
+      textLower.includes('p99') ||
+      textLower.includes('millisecond') ||
+      textLower.includes('async');
+
+    const mentionsPythonScope =
+      textLower.includes('scope') ||
+      textLower.includes('mutable') ||
+      textLower.includes('immutable') ||
+      textLower.includes('none') ||
+      textLower.includes('pure function') ||
+      textLower.includes('closure') ||
+      textLower.includes('thread') ||
+      textLower.includes('default argument') ||
+      textLower.includes('type hint') ||
+      textLower.includes('decorator');
+
+    const mentionsSqlJoins =
+      textLower.includes('left join') ||
+      textLower.includes('inner join') ||
+      textLower.includes('null') ||
+      textLower.includes('index') ||
+      textLower.includes('cartesian') ||
+      textLower.includes('predicate') ||
+      textLower.includes('on clause') ||
+      textLower.includes('where clause') ||
+      textLower.includes('query');
+
+    const mentionsFrontend =
+      textLower.includes('component') ||
+      textLower.includes('state') ||
+      textLower.includes('prop') ||
+      textLower.includes('hook') ||
+      textLower.includes('render') ||
+      textLower.includes('dom') ||
+      textLower.includes('css') ||
+      textLower.includes('responsive');
+
+    const mentionsTradeoffs =
+      textLower.includes('trade-off') ||
+      textLower.includes('tradeoff') ||
+      textLower.includes('alternative') ||
+      textLower.includes('versus') ||
+      textLower.includes('instead of') ||
+      textLower.includes('drawback') ||
+      textLower.includes('downside') ||
+      textLower.includes('benefit') ||
+      textLower.includes('advantage') ||
+      textLower.includes('compromise');
+
+    const mentionsQuantitative =
+      textLower.includes('%') ||
+      textLower.includes('percent') ||
+      textLower.includes('ms') ||
+      textLower.includes('p99') ||
+      textLower.includes('seconds') ||
+      textLower.includes('0.') ||
+      /\d+\s*(ms|k|m|%)?/.test(candidateText);
+
+    // 3. Question relevance matching
+    const qHasPython = qLower.includes('python') || qLower.includes('function') || qLower.includes('argument');
+    const qHasSql = qLower.includes('sql') || qLower.includes('join') || qLower.includes('query');
+    const qHasMetrics = qLower.includes('metric') || qLower.includes('precision') || qLower.includes('accuracy') || qLower.includes('auc');
+    const qHasSystemDesign = qLower.includes('design') || qLower.includes('latency') || qLower.includes('cache') || qLower.includes('service') || qLower.includes('architecture');
+    const qHasProject = qLower.includes('project') || qLower.includes('pipeline') || qLower.includes('benchmark');
+
+    // 4. Rubric Scoring Calculation
     let tech = 18;
     let prob = 18;
-    let comm = 19;
-    let rel = 20;
+    let comm = 18;
+    let rel = 19;
 
-    if (mentionsImbalance || mentionsPrecisionRecall || mentionsPythonScope || mentionsSqlJoins) tech += 4;
-    if (mentionsThresholdOrSmote || mentionsLatencyOrCache) prob += 4;
-    if (candidateText.length > 120) comm += 3;
+    // Technical depth bonuses
+    if (
+      mentionsImbalance ||
+      mentionsPrecisionRecall ||
+      mentionsPythonScope ||
+      mentionsSqlJoins ||
+      mentionsModelArch ||
+      mentionsFrontend
+    ) {
+      tech += 3;
+    }
+    if (mentionsThresholdOrCalibration || mentionsLatencyOrCache || mentionsSmoteOrSampling) {
+      tech += 2;
+    }
+
+    // Problem-solving & Trade-off bonuses
+    if (mentionsTradeoffs) {
+      prob += 3;
+    }
+    if (mentionsQuantitative || mentionsThresholdOrCalibration) {
+      prob += 2;
+    }
+
+    // Communication bonuses based on structured articulation
+    if (trimmed.length > 90) comm += 2;
+    if (trimmed.length > 200) comm += 2;
+    if (
+      textLower.includes('first') ||
+      textLower.includes('because') ||
+      textLower.includes('therefore') ||
+      textLower.includes('additionally') ||
+      textLower.includes('specifically')
+    ) {
+      comm += 1;
+    }
+
+    // Domain relevance to the specific question
+    if (
+      (qHasPython && mentionsPythonScope) ||
+      (qHasSql && mentionsSqlJoins) ||
+      (qHasMetrics && (mentionsPrecisionRecall || mentionsImbalance)) ||
+      (qHasSystemDesign && (mentionsLatencyOrCache || mentionsModelArch)) ||
+      (qHasProject && (mentionsModelArch || mentionsTradeoffs))
+    ) {
+      rel += 4;
+    } else {
+      rel += 2;
+    }
+
+    // Clamp rubric elements to max 25 each
+    tech = Math.min(25, tech);
+    prob = Math.min(25, prob);
+    comm = Math.min(25, comm);
+    rel = Math.min(25, rel);
 
     const total = Math.min(96, tech + prob + comm + rel);
 
-    // Dynamic Follow-Up Questioning (Interviewer asks intelligent follow-up just like a real person)
+    // 5. Contextual dynamic follow-up questioning
     let followUp = '';
     if (textLower.includes('smote')) {
-      followUp = 'You mentioned using SMOTE for oversampling. In high-dimensional sparse data, SMOTE can create noisy synthetic instances that bleed across decision boundaries. How do you prevent data leakage during cross-validation?';
+      followUp =
+        'You mentioned using SMOTE for oversampling. In high-dimensional sparse data, synthetic instances can bleed across decision boundaries. How do you prevent target leakage during nested cross-validation?';
     } else if (textLower.includes('precision') || textLower.includes('recall')) {
-      followUp = 'You emphasized balancing Precision and Recall. How would you translate a 5% drop in Precision into concrete business dollars lost to customer churn versus fraud chargeback liability?';
-    } else if (textLower.includes('left join') || textLower.includes('sql')) {
-      followUp = 'Good explanation. In a production database with replica lag, how do you verify that your LEFT JOIN query avoids locking critical OLTP transaction tables during peak hours?';
+      followUp =
+        'You emphasized balancing Precision and Recall. How would you translate a 5% drop in Precision into concrete business dollar losses (e.g., customer friction vs. chargeback liability)?';
+    } else if (textLower.includes('left join') || textLower.includes('sql') || qHasSql) {
+      followUp =
+        'In a high-throughput production database with replica lag, how do you verify your JOIN queries avoid locking critical transaction tables during peak write hours?';
+    } else if (textLower.includes('mutable') || textLower.includes('closure') || qHasPython) {
+      followUp =
+        'You pointed out avoiding mutable defaults and ensuring thread safety. In an asynchronous or multi-worker service, how do you handle state sharing and profile memory overhead?';
     } else if (textLower.includes('threshold') || textLower.includes('cutoff')) {
-      followUp = 'When calibrating the decision threshold, what statistical method (such as Platt scaling or Isotonic regression) would you use to ensure output probabilities represent true empirical risk?';
+      followUp =
+        'When calibrating the decision threshold, what statistical method (such as Platt scaling or Isotonic regression) would you use to ensure output probabilities represent true empirical risk?';
     } else if (textLower.includes('redis') || textLower.includes('cache')) {
-      followUp = 'Using Redis provides sub-millisecond retrieval. What is your cache invalidation strategy when a user card is suddenly flagged as stolen in the central fraud registry?';
+      followUp =
+        'Using Redis provides sub-millisecond retrieval. What is your cache invalidation strategy when an entity is suddenly updated or invalidated in the primary source of truth?';
+    } else if (textLower.includes('xgboost') || textLower.includes('model') || qHasProject) {
+      followUp =
+        'In production, models degrade as underlying data distributions shift. What automated monitoring metrics would trigger an alert for feature drift or retraining?';
+    } else if (qHasSystemDesign) {
+      followUp =
+        'Under a sudden 10x traffic surge, what circuit-breaking, queue-buffering, and rate-limiting policies would prevent cascading failures in this architecture?';
     } else {
-      followUp = 'That is a reasonable foundation. Can you go one step deeper: what metrics or logging would you inspect in production to verify this operates reliably under 10x traffic spikes?';
+      followUp = `That provides a strong conceptual basis. In a senior ${role} interview, how would you instrument this in production with structured logging and alerts to prove it operates reliably?`;
     }
 
+    // 6. Strengths and Improvements
     const strengths: string[] = [];
     const improvements: string[] = [];
 
-    if (candidateText.length > 100) {
-      strengths.push('Articulate, structured explanation with attention to practical engineering trade-offs.');
+    if (trimmed.length > 100) {
+      strengths.push('Articulate, structured explanation with attention to practical engineering decisions.');
     }
-    if (mentionsImbalance || mentionsPrecisionRecall || mentionsSqlJoins || mentionsPythonScope) {
-      strengths.push('Demonstrates solid command of domain-specific mechanisms and production pitfalls.');
+    if (mentionsTradeoffs) {
+      strengths.push('Proactively evaluated architectural trade-offs and alternatives rather than providing a one-size-fits-all solution.');
+    }
+    if (
+      mentionsImbalance ||
+      mentionsPrecisionRecall ||
+      mentionsSqlJoins ||
+      mentionsPythonScope ||
+      mentionsLatencyOrCache
+    ) {
+      strengths.push('Demonstrated solid command of core domain terminology and production pitfalls.');
     } else {
-      improvements.push('Incorporate explicit technical terminology (e.g. indexing strategies, metric formulas, or threshold tuning).');
+      improvements.push('Incorporate deeper technical terminology specific to your target domain (e.g., indexing, probability calibration, thread safety).');
     }
 
-    if (!mentionsThresholdOrSmote && !mentionsLatencyOrCache) {
-      improvements.push('Consider quantifying the business impact or latency constraints in numbers (e.g. p99 latency < 50ms).');
+    if (!mentionsQuantitative) {
+      improvements.push('Quantify technical performance metrics where possible (e.g., target p99 latency < 50ms, memory overhead, or accuracy baselines).');
     }
+    if (!mentionsLatencyOrCache && !qHasPython && !qHasSql) {
+      improvements.push('Mention failure recovery or graceful degradation modes in production environments.');
+    }
+
+    const feedback =
+      total >= 85
+        ? `Exceptional answer (${total}/100). You demonstrated senior-level technical depth and trade-off awareness aligned with industry expectations for ${role}.`
+        : `Well-structured answer (${total}/100). You demonstrated sound technical reasoning with clear areas to elevate your response to senior engineering standards.`;
 
     return {
       score: total,
       breakdown: {
-        technicalCorrectness: Math.min(25, tech),
-        problemSolving: Math.min(25, prob),
-        communicationStructure: Math.min(25, comm),
-        domainRelevance: Math.min(25, rel),
+        technicalCorrectness: tech,
+        problemSolving: prob,
+        communicationStructure: comm,
+        domainRelevance: rel,
       },
-      feedback: `Well-structured answer (${total}/100). You demonstrated sound technical reasoning aligned with industry expectations for ${studentContext?.targetCareer || 'this role'}.`,
+      feedback,
       strengths,
       improvements,
       followUpQuestion: followUp,

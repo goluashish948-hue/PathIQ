@@ -101,9 +101,22 @@ router.get('/questions', async (req: Request, res: Response, next: NextFunction)
   }
 });
 
-router.post('/evaluate-turn', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
+router.post('/evaluate-turn', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const userId = req.user!.id;
+    let userId: string | null = null;
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const token = authHeader.split(' ')[1];
+        const decoded: any = (await import('jsonwebtoken')).default.decode(token);
+        if (decoded?.id) {
+          userId = decoded.id;
+        }
+      } catch {
+        // Fallback to guest
+      }
+    }
+
     const { turnIndex = 1, candidateResponse = '', questionText = '', studentContext } = req.body;
 
     const result = interviewEngine.evaluateCandidateAnswer(
@@ -113,13 +126,15 @@ router.post('/evaluate-turn', requireAuth, async (req: Request, res: Response, n
       studentContext
     );
 
-    // Log interview turn in Career Twin
-    await careerTwinEngine.logEvent(userId, 'INTERVIEW_TURN_EVALUATED', {
-      turnIndex,
-      score: result.score,
-      strengths: result.strengths,
-      improvements: result.improvements,
-    });
+    // If authenticated, log interview turn in Career Twin
+    if (userId) {
+      await careerTwinEngine.logEvent(userId, 'INTERVIEW_TURN_EVALUATED', {
+        turnIndex,
+        score: result.score,
+        strengths: result.strengths,
+        improvements: result.improvements,
+      });
+    }
 
     res.json({ data: result });
   } catch (err) {
@@ -127,23 +142,41 @@ router.post('/evaluate-turn', requireAuth, async (req: Request, res: Response, n
   }
 });
 
-router.get('/readiness-profile', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/readiness-profile', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const userId = req.user!.id;
-    const profile = await prisma.studentProfile.findUnique({
-      where: { userId },
-      select: { targetCareer: true },
-    });
-    const targetCareer = profile?.targetCareer || 'Fraud Detection ML Engineer in FinTech';
+    let userId: string = 'demo-guest';
+    let targetCareer = 'Fraud Detection ML Engineer in FinTech';
+
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const token = authHeader.split(' ')[1];
+        const decoded: any = (await import('jsonwebtoken')).default.decode(token);
+        if (decoded?.id) {
+          userId = decoded.id;
+          const profile = await prisma.studentProfile.findUnique({
+            where: { userId },
+            select: { targetCareer: true },
+          });
+          if (profile?.targetCareer) {
+            targetCareer = profile.targetCareer;
+          }
+        }
+      } catch {
+        // Fallback to guest
+      }
+    }
 
     const readiness = interviewEngine.generateReadinessProfile(userId, targetCareer);
 
-    // Update Career Twin
-    await careerTwinEngine.logEvent(userId, 'INTERVIEW_READINESS_COMPUTED', {
-      readinessScore: readiness.readinessScore,
-      readinessBand: readiness.readinessBand,
-      targetCareer,
-    });
+    // If real user, update Career Twin
+    if (userId !== 'demo-guest') {
+      await careerTwinEngine.logEvent(userId, 'INTERVIEW_READINESS_COMPUTED', {
+        readinessScore: readiness.readinessScore,
+        readinessBand: readiness.readinessBand,
+        targetCareer,
+      });
+    }
 
     res.json({ data: readiness });
   } catch (err) {

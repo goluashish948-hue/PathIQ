@@ -30,6 +30,7 @@ export const InterviewPage: React.FC = () => {
   const [evaluations, setEvaluations] = useState<any[]>([]);
   const [readinessProfile, setReadinessProfile] = useState<any>(null);
   const [answeringFollowUp, setAnsweringFollowUp] = useState(false);
+  const [evalError, setEvalError] = useState<string | null>(null);
 
   useEffect(() => {
     loadQuestions();
@@ -37,19 +38,22 @@ export const InterviewPage: React.FC = () => {
 
   async function loadQuestions() {
     try {
+      setEvalError(null);
       const res = await api.getInterviewQuestions();
       setTurns(res.turns || []);
       if (res.studentContext) {
         setStudentContext(res.studentContext);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      setEvalError(err?.message || 'Could not load interview questions. Please refresh the page.');
     }
   }
 
   async function handleEvaluateTurn() {
     if (!candidateResponse.trim() || evaluating) return;
     setEvaluating(true);
+    setEvalError(null);
     try {
       const currentTurn = turns.find(t => t.turnIndex === currentTurnIndex);
       const res = await api.evaluateInterviewTurn(
@@ -69,8 +73,9 @@ export const InterviewPage: React.FC = () => {
         ...prev,
         { turnIndex: currentTurnIndex, ...res, candidateResponse },
       ]);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      setEvalError(err?.message || 'Evaluation request failed. Please check your network and try again.');
     } finally {
       setEvaluating(false);
     }
@@ -81,13 +86,19 @@ export const InterviewPage: React.FC = () => {
     setCandidateResponse('');
     setFollowUpResponse('');
     setAnsweringFollowUp(false);
+    setEvalError(null);
 
-    if (currentTurnIndex < turns.length) {
-      setCurrentTurnIndex(prev => prev + 1);
-    } else {
-      // Final interview turn completed: load readiness profile
-      const prof = await api.getReadinessProfile();
-      setReadinessProfile(prof);
+    try {
+      if (currentTurnIndex < turns.length) {
+        setCurrentTurnIndex(prev => prev + 1);
+      } else {
+        // Final interview turn completed: load readiness profile
+        const prof = await api.getReadinessProfile();
+        setReadinessProfile(prof);
+      }
+    } catch (err: any) {
+      console.error(err);
+      setEvalError(err?.message || 'Could not generate final readiness profile.');
     }
   }
 
@@ -161,6 +172,21 @@ export const InterviewPage: React.FC = () => {
       {/* Main Turn Card */}
       {!readinessProfile ? (
         <div className="glass-card p-6 sm:p-8 rounded-3xl space-y-6">
+          {evalError && (
+            <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-xs text-rose-800 dark:text-rose-200 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />
+                <span>{evalError}</span>
+              </div>
+              <button
+                onClick={() => setEvalError(null)}
+                className="text-[11px] font-bold text-rose-600 hover:underline shrink-0"
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
+
           {currentTurn ? (
             <>
               {/* Question from Interviewer */}
@@ -333,7 +359,6 @@ export const InterviewPage: React.FC = () => {
                           />
                           <button
                             onClick={() => {
-                              alert('Follow-up answer recorded! Proceeding to next question.');
                               handleProceedToNext();
                             }}
                             className="px-4 py-2 rounded-xl bg-indigo-600 text-white font-bold text-xs"
