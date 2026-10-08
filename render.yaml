@@ -4,7 +4,7 @@ services:
     name: pathiq-web
     env: node
     plan: free
-    buildCommand: npm install && npm run build && cd server && npx prisma db push && npm run seed
+    buildCommand: npm install && npm run build && cd server && npx prisma db push
     startCommand: npm start
     envVars:
       - key: NODE_ENV
@@ -12,7 +12,7 @@ services:
       - key: PORT
         value: 10000
       - key: DATABASE_URL
-        value: file:./dev.db
+        sync: false
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_EXPIRES_IN

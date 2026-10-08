@@ -8,20 +8,23 @@ PathIQ is ready to be deployed to the cloud. You have three primary deployment o
 
 ## 🌟 Option 1: 1-Click Full-Stack Deployment on Render (Recommended & Free)
 
-The repository includes a ready-to-use [`render.yaml`](./render.yaml) blueprint that deploys the entire full-stack app (React SPA + Express API + SQLite database) as a single unified service.
+The repository includes a ready-to-use [`render.yaml`](./render.yaml) blueprint that deploys the entire full-stack app (React SPA + Express API + Neon PostgreSQL cloud database) as a single unified service.
 
 ### Steps:
 1. Go to [https://dashboard.render.com](https://dashboard.render.com) and log in (or sign up with GitHub).
 2. Click **New +** in the top right and select **Blueprint**.
 3. Connect your GitHub repository: `goluashish948-hue/PathIQ`.
 4. Render will automatically detect `render.yaml`.
-5. Click **Apply**.
-6. Render will:
+5. Render will prompt you for `DATABASE_URL`:
+   - Paste your Neon PostgreSQL connection string:
+     `postgresql://neondb_owner:npg_6JScFkW0azdb@ep-fragrant-frost-b50109ir-pooler.c-7.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require`
+6. Click **Apply**.
+7. Render will:
    - Run `npm install`
    - Build both the React frontend and Express backend (`npm run build`)
-   - Initialize the database schema and seed the vetted domain data
+   - Synchronize database schema with Neon (`npx prisma db push`)
    - Start the service with `npm start`
-7. Once finished (typically 2-3 minutes), Render provides a live public URL (e.g., `https://pathiq-web.onrender.com`).
+8. Once finished (typically 2-3 minutes), Render provides a live public URL (e.g., `https://pathiq-web.onrender.com`).
 
 ---
 
