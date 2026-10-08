@@ -74,7 +74,7 @@ function formatSeconds(secs: number): string {
   return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 }
 
-// Format remaining seconds into friendly readable text (Hindi + English)
+// Format remaining seconds into friendly readable text (English)
 function formatRemainingHuman(secs: number): string {
   const safeSecs = Math.max(0, Math.floor(secs));
   const m = Math.floor(safeSecs / 60);
@@ -704,7 +704,7 @@ export const DailyPlannerPage: React.FC = () => {
                               {timer.isRunning && (
                                 <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-500/20 text-emerald-600 dark:text-emerald-300 border border-emerald-500/30 animate-pulse">
                                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
-                                  ● TIMER CHAL RAHA HAI
+                                  ● TIMER ACTIVE
                                 </span>
                               )}
 
@@ -815,13 +815,13 @@ export const DailyPlannerPage: React.FC = () => {
                                     {formatSeconds(timer.secondsLeft)}
                                   </span>
                                   <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
-                                    {timer.isRunning ? 'countdown chal raha hai' : 'timer paused hai'}
+                                    {timer.isRunning ? 'Timer Active' : 'Timer Paused'}
                                   </span>
                                 </div>
 
-                                {/* Exact remaining time prompt in Hindi/English */}
+                                {/* Exact remaining time prompt in English */}
                                 <div className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 mt-0.5">
-                                  <span>⏳ Pura hone mai bacha hai:</span>
+                                  <span>⏳ Time Left:</span>
                                   <span className="px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950/80 font-mono text-emerald-800 dark:text-emerald-300">
                                     {formatRemainingHuman(timer.secondsLeft)}
                                   </span>
@@ -832,7 +832,7 @@ export const DailyPlannerPage: React.FC = () => {
                             {/* Completed vs Planned info */}
                             <div className="text-right text-xs">
                               <span className="text-slate-500 block">
-                                Padh chuke hain:{' '}
+                                Time Studied:{' '}
                                 <strong className="text-slate-800 dark:text-slate-200">
                                   {Math.floor(timer.elapsedSeconds / 60)}m {timer.elapsedSeconds % 60}s
                                 </strong>
@@ -872,7 +872,7 @@ export const DailyPlannerPage: React.FC = () => {
                                 <span>Pause</span>
                               </button>
                             ) : timer.hasStarted ? (
-                              /* RESUME BUTTON: Prominently shows remaining time bacha hai */
+                              /* RESUME BUTTON: Prominently shows remaining time left */
                               <button
                                 onClick={() => resumeTimer(block.id)}
                                 className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-emerald-600/20 transition-all hover:scale-105"
@@ -880,7 +880,7 @@ export const DailyPlannerPage: React.FC = () => {
                               >
                                 <Play className="w-3.5 h-3.5 fill-white" />
                                 <span>
-                                  Resume ({formatRemainingHuman(timer.secondsLeft)} bacha hai)
+                                  Resume ({formatRemainingHuman(timer.secondsLeft)} left)
                                 </span>
                               </button>
                             ) : (
@@ -1112,7 +1112,7 @@ export const DailyPlannerPage: React.FC = () => {
                       {formatSeconds(activeTimer.secondsLeft)}
                     </span>
                     <span className="text-xs text-emerald-400 font-bold">
-                      bacha hai ({formatRemainingHuman(activeTimer.secondsLeft)})
+                      Time Left: {formatRemainingHuman(activeTimer.secondsLeft)}
                     </span>
                   </div>
                 </div>
