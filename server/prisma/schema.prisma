@@ -1,0 +1,830 @@
+// Prisma schema for PathIQ - AI Career GPS
+// Supports SQLite for zero-dependency standalone dev & Postgres for production
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ----------------------------------------------------
+// USERS & AUTH (Part 2.1)
+// ----------------------------------------------------
+model User {
+  id                String             @id @default(uuid())
+  email             String             @unique
+  passwordHash      String
+  name              String
+  role              String             @default("STUDENT") // STUDENT | ADMIN
+  ageConfirmed      Boolean            @default(true)
+  isUnder18         Boolean            @default(false)
+  emailVerified     Boolean            @default(false)
+  avatarUrl         String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  studentProfile    StudentProfile?
+  careerTwin        CareerTwin?
+  roadmaps          Roadmap[]
+  resumes           Resume[]
+  portfolio         Portfolio?
+  mentorConvs       MentorConversation[]
+  interviews        Interview[]
+  proofSubmissions  ProofSubmission[]
+  capstoneSubmissions CapstoneSubmission[]
+  dailyPlans        DailyPlan[]
+  notifications     Notification[]
+  notificationPref  NotificationPref?
+  streaks           Streak?
+  badges            Badge[]
+  auditLogs         AuditLog[]
+  dataRequests      DataRequest[]
+  safetyEvents      SafetyEvent[]
+}
+
+model StudentProfile {
+  id                String       @id @default(uuid())
+  userId            String       @unique
+  user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  educationLevel    String?      // High School, Undergraduate, Graduate
+  courseDegree      String?      // B.Tech CSE, BCA, B.Sc, etc.
+  yearSemester      String?      // 2nd Year / 4th Sem
+  targetCareer      String?      // Fraud Detection ML Engineer in FinTech
+  targetDomain      String?      // Technology & IT
+  availableWeeklyHours Int       @default(10)
+  learningPreference String      @default("mixed") // video | reading | practice-first | project-first | mixed
+  preferredLanguage String       @default("en") // en | hi | hinglish
+  bio               String?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  educations        Education[]
+  experiences       Experience[]
+  certifications    Certification[]
+  studentSkills     StudentSkill[]
+  projects          Project[]
+}
+
+model Education {
+  id               String          @id @default(uuid())
+  profileId        String
+  profile          StudentProfile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  institution      String
+  degree           String
+  fieldOfStudy     String?
+  startYear        Int?
+  endYear          Int?
+  gradeGpa         String?
+}
+
+model Experience {
+  id               String          @id @default(uuid())
+  profileId        String
+  profile          StudentProfile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  title            String
+  company          String
+  location         String?
+  startDate        DateTime?
+  endDate          DateTime?
+  isCurrent        Boolean         @default(false)
+  description      String?
+}
+
+model Certification {
+  id               String          @id @default(uuid())
+  profileId        String
+  profile          StudentProfile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  name             String
+  issuer           String
+  issueDate        DateTime?
+  credentialUrl    String?
+  isVerified       Boolean         @default(false)
+}
+
+// ----------------------------------------------------
+// DOMAIN PACKS & TAXONOMY (Part 2, 4)
+// ----------------------------------------------------
+model Domain {
+  id               String          @id @default(uuid())
+  code             String          @unique // tech, healthcare, law, etc.
+  name             String
+  description      String
+  icon             String?
+  skillsCount      Int             @default(0)
+  rolesCount       Int             @default(0)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  domainPacks      DomainPack[]
+  skills           Skill[]
+  occupations      Occupation[]
+}
+
+model DomainPack {
+  id               String               @id @default(uuid())
+  domainId         String
+  domain           Domain               @relation(fields: [domainId], references: [id], onDelete: Cascade)
+  version          String               @default("1.0.0")
+  isActive         Boolean              @default(true)
+  packData         String               // JSON string with taxonomy, milestones, proof templates, radar weights
+  reviewedByAdmin  Boolean              @default(true)
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+
+  versions         DomainPackVersion[]
+}
+
+model DomainPackVersion {
+  id               String          @id @default(uuid())
+  packId           String
+  pack             DomainPack      @relation(fields: [packId], references: [id], onDelete: Cascade)
+  version          String
+  changesSummary   String?
+  packData         String          // JSON snapshot
+  createdAt        DateTime        @default(now())
+}
+
+model Skill {
+  id               String          @id @default(uuid())
+  name             String          @unique
+  domainId         String?
+  domain           Domain?         @relation(fields: [domainId], references: [id], onDelete: SetNull)
+  description      String
+  type             String          @default("technical") // technical | domain | tool | certification | soft
+  level0Desc       String?
+  level1Desc       String?
+  level2Desc       String?
+  level3Desc       String?
+  level4Desc       String?
+  createdAt        DateTime        @default(now())
+
+  aliases          SkillAlias[]
+  studentSkills    StudentSkill[]
+  fromRelations    SkillRelation[] @relation("FromSkill")
+  toRelations      SkillRelation[] @relation("ToSkill")
+  occupationSkills OccupationSkill[]
+}
+
+model SkillAlias {
+  id               String          @id @default(uuid())
+  skillId          String
+  skill            Skill           @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  alias            String          @unique
+}
+
+model SkillRelation {
+  id               String          @id @default(uuid())
+  fromSkillId      String
+  toSkillId        String
+  fromSkill        Skill           @relation("FromSkill", fields: [fromSkillId], references: [id], onDelete: Cascade)
+  toSkill          Skill           @relation("ToSkill", fields: [toSkillId], references: [id], onDelete: Cascade)
+  relationType     String          // prerequisite | parent-child | related | substitute
+  transferFactor   Float           @default(1.0) // 0.0 - 1.0 for partial matching
+}
+
+model Occupation {
+  id               String          @id @default(uuid())
+  title            String          @unique
+  domainId         String?
+  domain           Domain?         @relation(fields: [domainId], references: [id], onDelete: SetNull)
+  description      String
+  responsibilities String?         // JSON array or text
+  seniorityLevels  String?         // Junior, Mid, Senior, Lead
+  relatedRoles     String?         // JSON array of related occupation titles for branching
+  createdAt        DateTime        @default(now())
+
+  skills           OccupationSkill[]
+}
+
+model OccupationSkill {
+  id               String          @id @default(uuid())
+  occupationId     String
+  skillId          String
+  occupation       Occupation      @relation(fields: [occupationId], references: [id], onDelete: Cascade)
+  skill            Skill           @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  importance       String          @default("MUST_HAVE") // MUST_HAVE | GOOD_TO_HAVE | DIFFERENTIATOR
+  targetLevel      Int             @default(2) // 1-4
+  frequencyPercent Float           @default(80.0)
+}
+
+// ----------------------------------------------------
+// JOB CORPUS & MARKET INTELLIGENCE (Part 4.3, 5, 13)
+// ----------------------------------------------------
+model JobPosting {
+  id               String          @id @default(uuid())
+  title            String
+  company          String?
+  source           String          @default("corpus") // corpus | user_pasted | licensed_api
+  rawText          String
+  textHash         String
+  seniority        String?
+  domain           String?
+  extractedSkills  String          // JSON array of { skill, importance, spanStart, spanEnd, exactQuote }
+  licenseInfo      String?
+  isSynthetic      Boolean         @default(false)
+  postedAt         DateTime        @default(now())
+  createdAt        DateTime        @default(now())
+}
+
+model JobStats {
+  id               String          @id @default(uuid())
+  roleKey          String          @unique
+  sampleSize       Int             @default(0)
+  statsData        String          // JSON: skill frequencies, must-have ratios, salary ranges (if from JDs), trends
+  lastCalculatedAt DateTime        @default(now())
+}
+
+model GoalAnalysis {
+  id               String          @id @default(uuid())
+  userId           String?
+  inputGoal        String
+  specificity      String          // TOO_VAGUE | OKAY | SPECIFIC
+  detectedDomain   String
+  detectedRole     String
+  suggestions      String          // JSON array of refined goal strings
+  createdAt        DateTime        @default(now())
+}
+
+model JobDna {
+  id               String          @id @default(uuid())
+  roleKey          String          @unique
+  domain           String
+  summary          String
+  responsibilities String          // JSON array: what you actually do day-to-day
+  mustHaveSkills   String          // JSON array with evidence, posting counts, target levels
+  goodToHaveSkills String          // JSON array
+  differentiators  String          // JSON array
+  typicalProjects  String          // JSON array
+  sourcesSummary   String          // JSON: counts of corpus JDs, user JDs, API
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+}
+
+model JdAnalysis {
+  id               String          @id @default(uuid())
+  userId           String?
+  rawText          String
+  targetRole       String?
+  extractedSkills  String          // JSON array with verbatim spans
+  confidence       Float           @default(0.9)
+  createdAt        DateTime        @default(now())
+}
+
+// ----------------------------------------------------
+// CAREER TWIN & VERIFICATION (Part 6, 7)
+// ----------------------------------------------------
+model CareerTwin {
+  id               String          @id @default(uuid())
+  userId           String          @unique
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  overallReadiness Float           @default(0.0) // 0-100
+  roadmapCompletion Float          @default(0.0)
+  knowledgeScore   Float           @default(0.0)
+  quizMasteryScore Float           @default(0.0)
+  practicalScore   Float           @default(0.0)
+  projectsScore    Float           @default(0.0)
+  interviewScore   Float           @default(0.0)
+  radarDimensions  String          // JSON: { technical, domain, practical, projects, communication, interview }
+  weaknesses       String          // JSON array of weak topics
+  strengths        String          // JSON array of strong topics
+  lastEventAt      DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  events           TwinEvent[]
+  snapshots        TwinSnapshot[]
+}
+
+model TwinEvent {
+  id               String          @id @default(uuid())
+  twinId           String
+  twin             CareerTwin      @relation(fields: [twinId], references: [id], onDelete: Cascade)
+  eventType        String          // SKILL_DECLARED | TOPIC_COMPLETED | QUIZ_ATTEMPTED | PROOF_VERIFIED | PROJECT_ANALYZED | INTERVIEW_DONE | GOAL_CHANGED | HOURS_CHANGED
+  eventPayload     String          // JSON
+  createdAt        DateTime        @default(now())
+}
+
+model TwinSnapshot {
+  id               String          @id @default(uuid())
+  twinId           String
+  twin             CareerTwin      @relation(fields: [twinId], references: [id], onDelete: Cascade)
+  monthLabel       String          // "Month 1", "Month 2", etc.
+  overallReadiness Float
+  metricsBreakdown String          // JSON
+  keyMilestones    String?         // JSON array of strings
+  createdAt        DateTime        @default(now())
+}
+
+model StudentSkill {
+  id               String          @id @default(uuid())
+  profileId        String
+  profile          StudentProfile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  skillId          String
+  skill            Skill           @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  declaredLevel    Int             @default(1) // 0-4
+  effectiveLevel   Float           @default(0.5) // level * verificationWeight
+  verificationState String         @default("SELF_REPORTED") // SELF_REPORTED | ASSESSED | EVIDENCE_BACKED
+  evidenceType     String?         // QUIZ | PROOF | PROJECT | GITHUB
+  evidenceRefId    String?         // ID of the quiz attempt or proof submission
+  verifiedAt       DateTime?
+  lastPracticedAt  DateTime?
+  updatedAt        DateTime        @updatedAt
+}
+
+// ----------------------------------------------------
+// ROADMAP, GRAPH & SCHEDULING (Part 8, 9, 13)
+// ----------------------------------------------------
+model Roadmap {
+  id               String          @id @default(uuid())
+  userId           String
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  targetCareer     String
+  targetDomain     String
+  trackType        String          @default("STRONG") // FAST | STRONG
+  weeklyHours      Int             @default(10)
+  status           String          @default("ACTIVE") // ACTIVE | ARCHIVED | DRAFT
+  versionNumber    Int             @default(1)
+  overallProgress  Float           @default(0.0)
+  totalEstimatedHours Int          @default(120)
+  isShareable      Boolean         @default(false)
+  shareSlug        String?         @unique
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  nodes            RoadmapNode[]
+  edges            RoadmapEdge[]
+  versions         RoadmapVersion[]
+  diffs            RoadmapDiff[]
+}
+
+model RoadmapVersion {
+  id               String          @id @default(uuid())
+  roadmapId        String
+  roadmap          Roadmap         @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
+  versionNumber    Int
+  reason           String          // INITIAL_GENERATION | REPLAN_MISSED_TIME | HOURS_CHANGE | GOAL_SWITCH
+  graphSnapshot    String          // JSON: nodes, edges, schedule
+  createdAt        DateTime        @default(now())
+}
+
+model RoadmapDiff {
+  id               String          @id @default(uuid())
+  roadmapId        String
+  roadmap          Roadmap         @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
+  status           String          @default("PENDING") // PENDING | ADOPTED | DISMISSED
+  triggerReason    String
+  explanation      String
+  addedNodes       String          // JSON array
+  removedNodes     String          // JSON array
+  modifiedNodes    String          // JSON array
+  scheduleDelta    String          // JSON
+  createdAt        DateTime        @default(now())
+}
+
+model RoadmapNode {
+  id               String          @id @default(uuid())
+  roadmapId        String
+  roadmap          Roadmap         @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
+  nodeKey          String          // unique per roadmap, e.g. "python_basics"
+  title            String
+  nodeType         String          @default("skill") // skill | topic | project | proof | milestone
+  importance       String          @default("MUST_HAVE") // MUST_HAVE | GOOD_TO_HAVE | DIFFERENTIATOR
+  targetLevel      Int             @default(2)
+  estimatedHours   Int             @default(10)
+  orderIndex       Int             @default(0)
+  scheduledWeek    Int             @default(1)
+  learningObjectives String        // JSON array
+  whyNeeded        String          // JSON: { why, evidence[], confidence }
+  practiceTasks    String?         // JSON array
+  quizConfig       String?         // JSON
+  proofRequirement String?         // JSON
+  resourceIds      String?         // JSON array of resource library IDs
+  status           String          @default("LOCKED") // LOCKED | AVAILABLE | CURRENT | COMPLETED
+  completedAt      DateTime?
+  clusterGroup     String?         // For UI grouping e.g. "Foundations"
+
+  topicsProgress   TopicProgress[]
+}
+
+model RoadmapEdge {
+  id               String          @id @default(uuid())
+  roadmapId        String
+  roadmap          Roadmap         @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
+  sourceNodeKey    String
+  targetNodeKey    String
+}
+
+// ----------------------------------------------------
+// DAILY PLANNER & TIME LOGS (Part 15)
+// ----------------------------------------------------
+model DailyPlan {
+  id               String          @id @default(uuid())
+  userId           String
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date             DateTime        @default(now())
+  allocatedMinutes Int             @default(120)
+  completedMinutes Int             @default(0)
+  quizScore        Int?
+  notes            String?
+  createdAt        DateTime        @default(now())
+
+  blocks           DailyPlanBlock[]
+}
+
+model DailyPlanBlock {
+  id               String          @id @default(uuid())
+  planId           String
+  plan             DailyPlan       @relation(fields: [planId], references: [id], onDelete: Cascade)
+  title            String
+  nodeKey          String?
+  durationMinutes  Int             @default(45)
+  actualMinutes    Int             @default(0)
+  category         String          @default("learn") // learn | practice | quiz_revision | project
+  isCompleted      Boolean         @default(false)
+  status           String          @default("PENDING") // PENDING | IN_PROGRESS | COMPLETED | SKIPPED
+  whyLearningThis  String?         // JSON: target job connection, unlock impact
+  orderIndex       Int             @default(0)
+}
+
+model TimeLog {
+  id               String          @id @default(uuid())
+  userId           String
+  nodeKey          String?
+  category         String          // learn | quiz | proof | project
+  minutesSpent     Int
+  loggedAt         DateTime        @default(now())
+}
+
+// ----------------------------------------------------
+// LEARN & QUIZ & MASTERY (Part 11)
+// ----------------------------------------------------
+model TopicProgress {
+  id               String          @id @default(uuid())
+  nodeId           String
+  node             RoadmapNode     @relation(fields: [nodeId], references: [id], onDelete: Cascade)
+  topicKey         String
+  title            String
+  progressStatus   String          @default("NOT_STARTED") // NOT_STARTED | IN_PROGRESS | COMPLETED
+  notes            String?
+  completedAt      DateTime?
+}
+
+model LearnContent {
+  id               String          @id @default(uuid())
+  topicKey         String          @unique
+  title            String
+  concepts         String          // Markdown content
+  examples         String          // Markdown or JSON
+  commonMistakes   String          // Markdown or JSON
+  checkQuestions   String          // JSON array of self-test questions
+  estimatedTimeMin Int             @default(45)
+  isAiGenerated    Boolean         @default(true)
+  updatedAt        DateTime        @updatedAt
+}
+
+model QuizBank {
+  id               String          @id @default(uuid())
+  topicKey         String
+  difficulty       String          // BEGINNER | INTERMEDIATE | ADVANCED
+  isVerifiedBySecondPass Boolean   @default(true)
+  createdAt        DateTime        @default(now())
+
+  questions        QuizQuestion[]
+}
+
+model QuizQuestion {
+  id               String          @id @default(uuid())
+  bankId           String
+  bank             QuizBank        @relation(fields: [bankId], references: [id], onDelete: Cascade)
+  type             String          @default("MCQ") // MCQ | MULTI_SELECT | SHORT_ANSWER | SCENARIO
+  questionText     String
+  options          String          // JSON array of strings
+  correctAnswer    String          // JSON representation of answer(s)
+  explanation      String
+  rubric           String?         // For short answer grading
+  isFlagged        Boolean         @default(false)
+  flagReason       String?
+}
+
+model QuizAttempt {
+  id               String          @id @default(uuid())
+  userId           String
+  nodeKey          String
+  topicKey         String
+  difficulty       String          // BEGINNER | INTERMEDIATE | ADVANCED
+  score            Int             @default(0)
+  totalQuestions   Int             @default(10)
+  percentage       Float           @default(0.0)
+  passed           Boolean         @default(false)
+  answersPayload   String          // JSON of student answers + feedback
+  attemptedAt      DateTime        @default(now())
+}
+
+model MasteryRecord {
+  id               String          @id @default(uuid())
+  userId           String
+  topicKey         String
+  masteryScore     Float           @default(0.0) // 0-100
+  attemptCount     Int             @default(0)
+  isMastered       Boolean         @default(false)
+  nextRevisionAt   DateTime?
+  revisionStage    Int             @default(0) // 0 (none), 1 (3 days), 2 (7 days), 3 (21 days)
+  updatedAt        DateTime        @updatedAt
+
+  @@unique([userId, topicKey])
+}
+
+// ----------------------------------------------------
+// PROOF ENGINE & CAPSTONES (Part 11.5, 17)
+// ----------------------------------------------------
+model ProofTemplate {
+  id               String          @id @default(uuid())
+  taskKey          String          @unique // e.g. "sql_fraud_queries"
+  domain           String
+  title            String
+  description      String
+  proofType        String          // SQL | ML | CODING | DESIGN | MARKETING | LAW | FINANCE | CASE_STUDY
+  instructions     String
+  rubric           String          // JSON criteria
+  sandboxConfig    String?         // JSON test cases or db seed
+  difficulty       String          @default("INTERMEDIATE")
+  associatedSkill  String          // e.g. "SQL"
+
+  submissions      ProofSubmission[]
+}
+
+model ProofSubmission {
+  id               String          @id @default(uuid())
+  userId           String
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  templateId       String
+  template         ProofTemplate   @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  submissionPayload String         // SQL queries string, code, repo link, or doc
+  artifactUrl      String?
+  evaluationMode   String          @default("AUTO_GRADED") // AUTO_GRADED | AI_REVIEWED
+  score            Float           @default(0.0) // 0-100
+  passed           Boolean         @default(false)
+  feedback         String?         // Evaluation breakdown with quotes and rubrics
+  submittedAt      DateTime        @default(now())
+}
+
+model Project {
+  id               String          @id @default(uuid())
+  profileId        String
+  profile          StudentProfile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  title            String
+  description      String
+  skillsUsed       String          // JSON array
+  repoUrl          String?
+  liveUrl          String?
+  analysisScore    Float?          // 0-100
+  analysisReport   String?         // JSON
+  createdAt        DateTime        @default(now())
+}
+
+model Capstone {
+  id               String          @id @default(uuid())
+  roleKey          String          @unique
+  domain           String
+  title            String
+  problemStatement String
+  requirements     String          // JSON array
+  milestones       String          // JSON array
+  acceptanceRubric String          // JSON
+  suggestedDatasets String         // JSON array of approved datasets
+  deliverables     String          // JSON array
+  createdAt        DateTime        @default(now())
+
+  submissions      CapstoneSubmission[]
+}
+
+model CapstoneSubmission {
+  id               String          @id @default(uuid())
+  capstoneId       String
+  userId           String
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  capstone         Capstone        @relation(fields: [capstoneId], references: [id], onDelete: Cascade)
+  repoUrl          String?
+  liveUrl          String?
+  documentation    String?
+  analysisReport   String?         // JSON with complexity, relevance, deployment
+  verifiedScore    Float?
+  status           String          @default("SUBMITTED") // SUBMITTED | PASSED | NEEDS_REVISION
+  submittedAt      DateTime        @default(now())
+}
+
+// ----------------------------------------------------
+// INTERVIEWS & READINESS (Part 16)
+// ----------------------------------------------------
+model Interview {
+  id               String          @id @default(uuid())
+  userId           String
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  targetCareer     String
+  type             String          @default("TECHNICAL") // TECHNICAL | HR | CASE_STUDY | READINESS
+  overallScore     Float?          // 0-100
+  status           String          @default("IN_PROGRESS") // IN_PROGRESS | COMPLETED
+  report           String?         // JSON
+  createdAt        DateTime        @default(now())
+
+  turns            InterviewTurn[]
+}
+
+model InterviewTurn {
+  id               String          @id @default(uuid())
+  interviewId      String
+  interview        Interview       @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  turnIndex        Int
+  interviewerText  String
+  candidateResponse String?
+  evaluation       String?         // JSON: rubric scores, evidence quotes
+  createdAt        DateTime        @default(now())
+}
+
+// ----------------------------------------------------
+// RESUME & PORTFOLIO BUILDER (Part 18, R1-R12)
+// ----------------------------------------------------
+model Resume {
+  id               String          @id @default(uuid())
+  userId           String
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  versionName      String          @default("Primary Resume") // e.g. "ML Engineer Focus", "Data Scientist Focus"
+  targetCareer     String?
+  isDefault        Boolean         @default(true)
+  atsScore         Float           @default(0.0) // 0-100
+  strengthScore    String          // JSON: { match, skills, projects, experience, keywords }
+  summary          String?
+  contentPayload   String          // JSON: full structured resume with sections and items
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+}
+
+model Portfolio {
+  id               String          @id @default(uuid())
+  userId           String          @unique
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  slug             String          @unique
+  isPublic         Boolean         @default(false)
+  title            String?
+  bio              String?
+  sectionsConfig   String          // JSON: visibility toggles for skills, projects, badges, progress
+  allowIndexSearch Boolean         @default(false)
+  updatedAt        DateTime        @updatedAt
+}
+
+// ----------------------------------------------------
+// RESOURCE LIBRARY & LINK CHECKS (Part 4.4, 49)
+// ----------------------------------------------------
+model ResourceLibrary {
+  id               String          @id @default(uuid())
+  title            String
+  provider         String          // Coursera, MIT OpenCourseWare, Kaggle, Official Docs
+  url              String          @unique
+  type             String          @default("interactive") // video | reading | interactive | project | documentation
+  cost             String          @default("free") // free | paid
+  language         String          @default("en")
+  associatedSkills String          // JSON array of skill names
+  level            String          @default("BEGINNER") // BEGINNER | INTERMEDIATE | ADVANCED
+  estimatedTimeMin Int             @default(60)
+  isAdminApproved  Boolean         @default(true)
+  isLinkValid      Boolean         @default(true)
+  lastCheckedAt    DateTime        @default(now())
+}
+
+// ----------------------------------------------------
+// AI MENTOR (Part 14)
+// ----------------------------------------------------
+model MentorConversation {
+  id               String          @id @default(uuid())
+  userId           String
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title            String          @default("Career Mentorship")
+  summary          String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  messages         MentorMessage[]
+}
+
+model MentorMessage {
+  id               String              @id @default(uuid())
+  conversationId   String
+  conversation     MentorConversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender           String              // student | mentor
+  text             String
+  citations        String?             // JSON: { why, evidence[], confidence }
+  proposedAction   String?             // JSON: action payload e.g. { type: 'RECALCULATE_ROADMAP', preview: '...' }
+  actionStatus     String?             // PENDING | CONFIRMED | DISMISSED
+  createdAt        DateTime            @default(now())
+}
+
+// ----------------------------------------------------
+// MARKET ALERTS & NOTIFICATIONS (Part 13.3, 20)
+// ----------------------------------------------------
+model MarketAlert {
+  id               String          @id @default(uuid())
+  roleKey          String
+  title            String
+  description      String
+  sampleSize       Int
+  significanceScore Float
+  evidenceData     String          // JSON: count deltas, date windows
+  suggestedAction  String?         // JSON
+  isActive         Boolean         @default(true)
+  detectedAt       DateTime        @default(now())
+}
+
+model Notification {
+  id               String          @id @default(uuid())
+  userId           String
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type             String          // STUDY_REMINDER | REVISION_DUE | REPLAN_OFFER | QUIZ_READY | PROOF_FEEDBACK | MARKET_ALERT
+  title            String
+  body             String
+  actionUrl        String?
+  isRead           Boolean         @default(false)
+  createdAt        DateTime        @default(now())
+}
+
+model NotificationPref {
+  id               String          @id @default(uuid())
+  userId           String          @unique
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emailEnabled     Boolean         @default(true)
+  inAppEnabled     Boolean         @default(true)
+  quietHoursStart  Int?            // Hour e.g. 22 (10 PM)
+  quietHoursEnd    Int?            // Hour e.g. 8 (8 AM)
+}
+
+// ----------------------------------------------------
+// GAMIFICATION (Part 15.3)
+// ----------------------------------------------------
+model Streak {
+  id               String          @id @default(uuid())
+  userId           String          @unique
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  currentStreak    Int             @default(0)
+  longestStreak    Int             @default(0)
+  lastActivityDate DateTime?
+  freezesRemaining Int             @default(2)
+}
+
+model Badge {
+  id               String          @id @default(uuid())
+  userId           String
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badgeKey         String          // FIRST_PROOF_VERIFIED, QUIZ_MASTER, ML_ROADMAP_50, etc.
+  title            String
+  description      String
+  icon             String
+  earnedAt         DateTime        @default(now())
+}
+
+// ----------------------------------------------------
+// AI AUDIT & SAFETY LOGS (Part 19, 21, 22)
+// ----------------------------------------------------
+model AiCall {
+  id               String          @id @default(uuid())
+  promptName       String
+  templateVersion  String          @default("1.0.0")
+  provider         String          @default("mock")
+  model            String
+  inputHash        String
+  tokensUsed       Int             @default(0)
+  latencyMs        Int             @default(150)
+  validationPassed Boolean         @default(true)
+  errorMessage     String?
+  createdAt        DateTime        @default(now())
+}
+
+model SafetyEvent {
+  id               String          @id @default(uuid())
+  userId           String?
+  user             User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  eventType        String          // INJECTION_ATTEMPT | FORBIDDEN_GUARANTEE_BLOCKED | SALARY_FABRICATION_BLOCKED | URL_STRIPPED
+  rawInputSnippet  String?
+  actionTaken      String          // BLOCKED | REDACTED | WARNED
+  createdAt        DateTime        @default(now())
+}
+
+model AuditLog {
+  id               String          @id @default(uuid())
+  userId           String?
+  user             User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action           String          // USER_LOGIN | REPLAN_ADOPTED | DATA_EXPORTED | DATA_DELETED | PACK_APPROVED
+  details          String?
+  ipAddress        String?
+  createdAt        DateTime        @default(now())
+}
+
+model DataRequest {
+  id               String          @id @default(uuid())
+  userId           String
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  requestType      String          // EXPORT | DELETE
+  status           String          @default("PENDING") // PENDING | COMPLETED
+  resultUrl        String?
+  createdAt        DateTime        @default(now())
+}
