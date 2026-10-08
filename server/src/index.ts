@@ -56,7 +56,8 @@ if (staticClientDir) {
 app.use(errorHandler);
 
 // Start server
-app.listen(PORT, () => {
+const HOST = '0.0.0.0';
+app.listen(Number(PORT) || 5001, HOST, () => {
   console.log(`🚀 PathIQ API server running on port ${PORT}`);
-  console.log(`📡 Health Check: http://localhost:${PORT}/api/v1/health`);
+  console.log(`📡 Health Check: http://${HOST}:${PORT}/api/v1/health`);
 });

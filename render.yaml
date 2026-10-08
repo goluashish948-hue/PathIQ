@@ -4,9 +4,11 @@ services:
     name: pathiq-web
     env: node
     plan: free
-    buildCommand: npm install && npm run build && cd server && npx prisma db push
+    buildCommand: npm install && npm run build
     startCommand: npm start
     envVars:
+      - key: NODE_VERSION
+        value: 20
       - key: NODE_ENV
         value: production
       - key: PORT
