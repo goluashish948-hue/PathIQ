@@ -716,7 +716,462 @@ model = xgb.XGBClassifier(
       };
     }
 
-    // 4. Default / Dynamic Content Generator for other topics
+    // 6. Applied Probability & Financial Risk Statistics
+    if (key.includes('math') || key.includes('prob') || key.includes('stats') || key.includes('bayes')) {
+      const approvedResources = RESOURCE_LIBRARY_SEED.filter(r => r.associatedSkills.includes('Statistics') || r.associatedSkills.includes('Python'));
+      return {
+        topicKey: 'fintech_math_prob_stats',
+        title: 'Applied Probability & Financial Risk Statistics',
+        category: 'machine_learning',
+        estimatedMinutes: 45,
+        conceptsCovered: [
+          'Bayes Theorem & Prior Odds Formulation',
+          'The Base-Rate Fallacy under Rare Class Rarity (<0.1%)',
+          'Heavy-Tailed & Pareto Transaction Amount Modeling',
+          'Statistical Power & Sample Size for Risk Rule A/B Tests',
+          'Log-Odds Transformations & Credit/Risk Scorecards',
+          'Confidence Intervals on Low-Frequency Events',
+        ],
+        learningObjectives: {
+          summary:
+            'In this topic, you will learn the mathematical and statistical foundations required for FinTech risk engineering. Under severe class rarity (<0.1% fraud), standard assumptions fail. You will master Bayes\' Theorem to conquer the base-rate fallacy, model fat-tailed financial dollar amounts using Pareto distributions, and conduct hypothesis tests to validate risk rule rollouts without causing revenue loss.',
+          coreConcepts: [
+            'Bayes\' Theorem and the Base-Rate Fallacy in rare-event detection',
+            'Modeling heavy-tailed and Pareto transaction amount distributions',
+            'Prior vs Posterior probability updates when combining multiple independent risk signals',
+            'Hypothesis testing (A/B testing risk rules) and Statistical Power calculation',
+            'Log-odds and logistic transformations for scoring engines',
+          ],
+          subtopics: [
+            {
+              title: 'The Base-Rate Fallacy & Bayes Theorem',
+              description:
+                'Why a 99% accurate model creates overwhelming false alerts when the prior probability of fraud is 0.1%, and how to compute exact posterior odds.',
+            },
+            {
+              title: 'Heavy-Tailed & Extreme Value Distributions',
+              description:
+                'Understanding why transaction amounts follow log-normal and Pareto power-law distributions rather than standard Gaussian bell curves.',
+            },
+            {
+              title: 'Statistical Testing for Risk Rules',
+              description:
+                'Conducting two-sample hypothesis tests to measure whether a new decline rule genuinely reduces chargeback rates without harming checkout conversion.',
+            },
+            {
+              title: 'Log-Odds & Calibration Scoring',
+              description:
+                'Transforming probabilities into credit/risk scorecards using log-odds scaling used across credit bureaus and payment networks.',
+            },
+          ],
+          focusAreas: [
+            'Always calculate the posterior probability using the true base rate; never rely on raw model confidence scores alone.',
+            'Beware of assuming normal distributions for dollar amounts — 80% of fraud losses often come from the top 1% of transaction amounts.',
+            'Ensure sample sizes in risk A/B tests have sufficient statistical power before rolling out aggressive blocking rules.',
+          ],
+          learningOutcomes: [
+            'Compute Bayesian posterior risk probabilities accurately under extreme class imbalance.',
+            'Fit power-law distributions to financial transaction losses and determine optimal cutoff points.',
+            'Design and evaluate risk rule experiments using rigorous statistical hypothesis tests.',
+            'Ace technical screening questions on probability and statistics at top FinTech firms.',
+          ],
+        },
+        conceptsMarkdown: `### Applied Probability & Financial Risk Statistics
+
+FinTech risk engineering operates in an asymmetric domain where the positive target (fraudulent transaction) accounts for less than **0.1% of all traffic**.
+
+#### 1. The Base-Rate Fallacy in Fraud Detection
+Consider a fraud classification rule with:
+- **Sensitivity (Recall)**: 95% (catches 95% of true fraud)
+- **False Positive Rate**: 2% (flags 2% of legitimate transactions)
+- **Base Rate (Prior)**: 0.1% (1 in 1,000 transactions is fraudulent)
+
+Using Bayes' Theorem:
+\`\`\`
+P(Fraud | Flagged) = [P(Flagged | Fraud) * P(Fraud)] / P(Flagged)
+P(Fraud | Flagged) = [0.95 * 0.001] / [(0.95 * 0.001) + (0.02 * 0.999)]
+P(Fraud | Flagged) = 0.00095 / [0.00095 + 0.01998] ≈ 0.0454 (4.54%)
+\`\`\`
+**Crucial Industry Insight**: Even with a model that has 95% sensitivity and only 2% false positives, **only 4.5% of flagged transactions are actually fraud!** 95.5% of flagged events are legitimate customers. If you hard-decline every flagged event, you will destroy customer trust and revenue.
+
+#### 2. Heavy-Tailed Dollar Distributions
+Financial transaction dollar amounts do not follow a Gaussian normal distribution. They follow a **Pareto (Power Law)** or log-normal distribution:
+\`\`\`python
+import numpy as np
+from scipy import stats
+
+# Fit Pareto distribution to extreme loss tail
+shape, loc, scale = stats.pareto.fit(transaction_amounts)
+value_at_risk_99 = stats.pareto.ppf(0.99, shape, loc, scale)
+\`\`\`
+`,
+        examples: [
+          {
+            title: 'Bayesian Posterior Calculator in Python',
+            codeSnippet: `def bayesian_fraud_posterior(prior_rate: float, sensitivity: float, fpr: float) -> float:
+    """Calculates true probability of fraud given a positive flag."""
+    numerator = sensitivity * prior_rate
+    denominator = numerator + (fpr * (1.0 - prior_rate))
+    return numerator / denominator
+
+# With 0.1% base rate, 95% sensitivity, 1% false positive rate:
+p_fraud = bayesian_fraud_posterior(0.001, 0.95, 0.01)
+print(f"Empirical probability of fraud: {p_fraud * 100:.2f}%") # ~8.69%`,
+            explanation: 'Demonstrates why base rate must be factored into decision thresholds.',
+          },
+        ],
+        commonMistakes: [
+          'Assuming a 99% accurate model catches fraud without high false alarms.',
+          'Assuming transaction amounts follow a normal Gaussian curve.',
+          'Rolling out blocking rules without running statistical power tests.',
+        ],
+        checkQuestions: [
+          {
+            question: 'Why does a model with 95% sensitivity and 2% false alarm rate only achieve ~4.5% precision on fraud?',
+            answer: 'Because of the base-rate fallacy: legitimate transactions outnumber fraudulent ones 1000 to 1, so the 2% false alarms on the huge negative majority swamp the true positives.',
+          },
+        ],
+        approvedResources,
+      };
+    }
+
+    // 7. Velocity Feature Engineering
+    if (key.includes('velocity') || key.includes('feature_engineering')) {
+      const approvedResources = RESOURCE_LIBRARY_SEED.filter(r => r.associatedSkills.includes('Pandas') || r.associatedSkills.includes('Python'));
+      return {
+        topicKey: 'feature_engineering_fraud',
+        title: 'Feature Engineering & Velocity Indicators',
+        category: 'machine_learning',
+        estimatedMinutes: 50,
+        conceptsCovered: [
+          'Sliding-Window Velocity Counters (5m, 1h, 24h, 7d)',
+          'Haversine Geographical Speed Anomalies (> 500 mph)',
+          'Card-to-IP and Device-to-Account Ratio Indicators',
+          'Out-of-Fold Target Encoding on High-Cardinality MCC Codes',
+          'Zero-Leakage TimeSeries Transformations',
+        ],
+        learningObjectives: {
+          summary:
+            'In this topic, you will learn how to engineer domain-specific velocity counters and behavioral discrepancy signals. In FinTech, raw transaction attributes carry minimal signal on their own. The true predictive power comes from historical context: how many cards this device used in the past 10 minutes, geographical distance between consecutive swipes, and sudden spikes over historical baselines.',
+          coreConcepts: [
+            'Rolling sliding-window counters (transaction count, sum, max over 5m, 1h, 24h, 7d)',
+            'Geographical velocity using the Haversine distance formula to catch physically impossible travel (speed > 500 mph)',
+            'Entity linkage and ratio features (distinct cards per IP, distinct emails per device fingerprint)',
+            'Categorical encoding for high-cardinality values (Merchant Category Codes - MCC, ZIP codes)',
+            'Preventing future data leakage when constructing time-series feature pipelines',
+          ],
+          subtopics: [
+            {
+              title: 'Sliding-Window Velocity Counters',
+              description: 'Computing rolling aggregates per user, card, and device to detect high-frequency card testing and bot attacks.',
+            },
+            {
+              title: 'Geographical Haversine Velocity',
+              description: 'Calculating distance and speed between consecutive swipes to detect cloned cards used across cities or continents simultaneously.',
+            },
+            {
+              title: 'Device & IP Fingerprint Ratios',
+              description: 'Tracking many-to-one and one-to-many relationships (e.g. 50 different cards attempted from one IP address within an hour).',
+            },
+            {
+              title: 'Out-of-Fold Target Encoding',
+              description: 'Encoding high-cardinality merchant categories without overfitting or leaking target label information into validation sets.',
+            },
+          ],
+          focusAreas: [
+            'Never use global aggregations that peek into future rows; all velocity windows must be strictly backward-looking from the transaction timestamp.',
+            'Cache rolling counters in memory (Redis) rather than computing expensive multi-table scans on every live transaction.',
+            'Handle edge cases for new users with zero transaction history using population fallback priors.',
+          ],
+          learningOutcomes: [
+            'Extract high-signal velocity features that boost model PR-AUC by 40%+ over raw columns.',
+            'Implement Haversine geodistance velocity detectors in Python.',
+            'Build Scikit-learn feature engineering transformers with zero lookahead leakage.',
+            'Articulate how Stripe Radar and PayPal engineer behavioral features to interviewers.',
+          ],
+        },
+        conceptsMarkdown: `### Feature Engineering & Velocity Indicators
+
+In production fraud systems, **over 80% of model lift** comes from domain-engineered features rather than model architecture tweaks.
+
+#### 1. Sliding Window Velocity
+Fraudsters often test stolen cards rapidly before the bank can freeze them. A cardholder who normally makes 1 transaction per day suddenly attempting 6 transactions in 10 minutes is a classic velocity spike.
+
+#### 2. Physical Impossible Travel (Haversine Speed)
+If a card is used in New York at 12:00 PM and then swiped in London at 1:00 PM:
+\`\`\`python
+from math import radians, cos, sin, asin, sqrt
+
+def haversine_distance_miles(lat1, lon1, lat2, lon2):
+    # Radius of earth in miles
+    r = 3956
+    dlat, dlon = radians(lat2 - lat1), radians(lon2 - lon1)
+    a = sin(dlat/2)**2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon/2)**2
+    c = 2 * asin(sqrt(a))
+    return r * c
+
+# Distance: 3,450 miles in 1 hour -> Speed: 3,450 mph (Impossible -> Definite Fraud)
+\`\`\`
+`,
+        examples: [
+          {
+            title: 'Rolling 1-Hour Velocity Transformer in Pandas',
+            codeSnippet: `import pandas as pd
+
+def add_rolling_velocity(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.sort_values('timestamp')
+    # Set timestamp as index for time-based rolling
+    df_indexed = df.set_index('timestamp')
+    
+    # 1-hour rolling count and sum grouped by user_id
+    rolling_1h = (
+        df_indexed.groupby('user_id')['amount']
+        .rolling('1h', closed='left') # 'left' prevents lookahead leakage!
+        .agg(['count', 'sum'])
+        .reset_index()
+    )
+    return df.merge(rolling_1h, on=['user_id', 'timestamp'], how='left')`,
+            explanation: 'Uses closed="left" to strictly avoid data leakage from the current row.',
+          },
+        ],
+        commonMistakes: [
+          'Using centered or closed="both" rolling windows that leak future transactions.',
+          'Failing to handle first-time transactions with NaN imputation.',
+          'Ignoring timezone discrepancies between IP geo-location and user home address.',
+        ],
+        checkQuestions: [
+          {
+            question: 'Why must rolling windows specify closed="left" when generating training features?',
+            answer: 'Because closed="left" excludes the current transaction from its own historical aggregate, preventing lookahead data leakage.',
+          },
+        ],
+        approvedResources,
+      };
+    }
+
+    // 8. Unsupervised Anomaly Detection
+    if (key.includes('anomaly') || key.includes('novelty') || key.includes('isolation')) {
+      const approvedResources = RESOURCE_LIBRARY_SEED.filter(r => r.associatedSkills.includes('Python') || r.associatedSkills.includes('Machine Learning'));
+      return {
+        topicKey: 'anomaly_detection_fraud',
+        title: 'Unsupervised Anomaly Detection & Novelty Detection',
+        category: 'machine_learning',
+        estimatedMinutes: 45,
+        conceptsCovered: [
+          'Chargeback Settlement Lag (60-90 Days)',
+          'Isolation Forest Tree Mechanics & Path Length',
+          'Local Outlier Factor (LOF) Density Estimation',
+          'DBSCAN Clustering for Syndicated Fraud Rings',
+          'Contamination Hyperparameter Tuning',
+        ],
+        learningObjectives: {
+          summary:
+            'In this topic, you will learn how to detect zero-day fraud attacks and syndicated crime rings without labeled data. Confirmed fraud chargebacks take 60 to 90 days to settle with Visa/Mastercard. During that lag, supervised models are blind. You will master Isolation Forests, Local Outlier Factor, and graph entity clustering to catch novel attack patterns before labels exist.',
+          coreConcepts: [
+            'Why supervised models fail during the 60-90 day chargeback settlement lag',
+            'Isolation Forest mechanics: recursive random partitioning isolating anomalies near the root',
+            'Local Outlier Factor (LOF) for density-based local anomaly scoring',
+            'Graph-based entity resolution and DBSCAN clustering to uncover organized fraud rings',
+            'Tuning contamination rate hyperparameters without ground-truth labels',
+          ],
+          subtopics: [
+            {
+              title: 'The Chargeback Lag Problem',
+              description: 'Understanding the 2-3 month feedback delay in financial fraud and why unsupervised novelty detection is mandatory.',
+            },
+            {
+              title: 'Isolation Forest Algorithm',
+              description: 'How random trees isolate anomalous feature points with significantly shorter path lengths than normal inliers.',
+            },
+            {
+              title: 'Density & Distance-Based Detectors (LOF)',
+              description: 'Detecting transactions that fall into low-density sparse regions compared to their nearest neighbors.',
+            },
+            {
+              title: 'Syndicated Ring Clustering with DBSCAN',
+              description: 'Grouping transactions sharing subtle fingerprint tokens (identical browser headers, sequential card numbers) into fraud rings.',
+            },
+          ],
+          focusAreas: [
+            'Remember that anomaly detection flags statistical rarities — some will be legitimate high-value VIP customers, requiring soft challenges (3D Secure) rather than hard declines.',
+            'Contamination parameter must be set conservatively (typically 0.005 to 0.01) to avoid overwhelming manual review queues.',
+            'Normalize and scale numeric dimensions before running distance-based algorithms.',
+          ],
+          learningOutcomes: [
+            'Implement and tune Isolation Forests on streaming transaction datasets.',
+            'Cluster and detect syndicated fraud rings using DBSCAN and entity graphs.',
+            'Defend the dual-layer strategy (supervised + unsupervised) during FinTech architecture interviews.',
+          ],
+        },
+        conceptsMarkdown: `### Unsupervised Anomaly Detection & Novelty Detection
+
+In the payments industry, **confirmed chargeback fraud labels arrive 60 to 90 days after transaction execution**. If a botnet starts testing 100,000 compromised cards today, supervised models cannot learn the new pattern until 3 months later.
+
+#### Isolation Forest Mechanics
+Isolation Forests work on the principle that anomalies are "few and different". Instead of profiling normal data, they recursively isolate points using random axis-aligned splits.
+- **Normal points**: Require many splits to isolate (deep in the tree).
+- **Anomalies**: Fall into sparse regions and are isolated after very few splits (near the root).
+`,
+        examples: [
+          {
+            title: 'Isolation Forest Pipeline in Scikit-Learn',
+            codeSnippet: `from sklearn.ensemble import IsolationForest
+import numpy as np
+
+# contamination=0.01 indicates expected 1% extreme anomalies
+iso_forest = IsolationForest(
+    n_estimators=100,
+    contamination=0.01,
+    random_state=42,
+    n_jobs=-1
+)
+
+iso_forest.fit(X_train_features)
+# Negative anomaly score indicates outliers
+anomaly_scores = iso_forest.decision_function(X_test_features)
+is_anomaly = iso_forest.predict(X_test_features) == -1`,
+            explanation: 'Trains an Isolation Forest to flag transactions in sparse regions without labels.',
+          },
+        ],
+        commonMistakes: [
+          'Hard-declining all anomalies without verifying if they are high-net-worth VIPs.',
+          'Setting contamination to default 0.1 (10%) when true fraud is only 0.1% (causing massive false alarms).',
+        ],
+        checkQuestions: [
+          {
+            question: 'Why do Isolation Forests isolate anomalies with shorter path lengths than inliers?',
+            answer: 'Because anomalies reside in sparse, low-density feature space regions, so random splits separate them from other points in very few cuts.',
+          },
+        ],
+        approvedResources,
+      };
+    }
+
+    // 9. Real-Time Serving, FastAPI & Redis Feature Store
+    if (key.includes('realtime') || key.includes('fastapi') || key.includes('redis') || key.includes('serving')) {
+      const approvedResources = RESOURCE_LIBRARY_SEED.filter(r => r.associatedSkills.includes('Python') || r.associatedSkills.includes('FastAPI'));
+      return {
+        topicKey: 'realtime_serving_redis',
+        title: 'Real-Time Serving, FastAPI & Redis Feature Store',
+        category: 'system_design',
+        estimatedMinutes: 50,
+        conceptsCovered: [
+          'Payment Network SLA & 50ms Latency Budget',
+          'FastAPI Asynchronous Request Handling',
+          'Redis In-Memory Feature Store Pipelines',
+          'Model Serialization with Treelite & ONNX Runtime',
+          'Fallback Heuristic Risk Rules & Circuit Breakers',
+        ],
+        learningObjectives: {
+          summary:
+            'In this topic, you will learn how to build low-latency real-time inference microservices. Payment card networks enforce strict SLAs: the entire risk decision must execute in under 50ms roundtrip. You will build asynchronous FastAPI services, integrate Redis as an in-memory feature store for 5ms velocity lookups, serialize models with ONNX/Treelite, and build fallback circuit breakers.',
+          coreConcepts: [
+            'Card authorization network SLAs and latency budgets (p99 < 50ms)',
+            'Asynchronous Python microservices with FastAPI, Uvicorn, and Pydantic validation',
+            'In-memory feature stores using Redis pipelines for sub-5ms rolling aggregate lookups',
+            'Model acceleration: serializing tree models with Treelite or ONNX Runtime for 10x faster inference',
+            'Graceful degradation: fallback heuristic rule engines and circuit breakers under load',
+          ],
+          subtopics: [
+            {
+              title: 'Latency Budgeting & Payment SLAs',
+              description: 'Deconstructing the 100ms authorization window: network transport, feature lookup, model scoring, and decision response.',
+            },
+            {
+              title: 'FastAPI Microservice Architecture',
+              description: 'Building async POST /v1/evaluate-transaction endpoints with strict schema validation and error boundaries.',
+            },
+            {
+              title: 'Redis In-Memory Feature Store',
+              description: 'Using Redis hashes and sorted sets with TTL expiration to query rolling 10m velocity in under 3 milliseconds.',
+            },
+            {
+              title: 'Circuit Breakers & Graceful Degradation',
+              description: 'Deploying fallback heuristic rules when Redis or the ML service experiences timeouts to prevent checkout blocking.',
+            },
+          ],
+          focusAreas: [
+            'Never perform blocking disk I/O or unindexed database queries inside the request lifecycle.',
+            'Benchmark p99 latency (the slowest 1% of transactions) rather than mean latency, as payment gateways timeout on the tail.',
+            'Serialize models into compiled C-libraries (Treelite) to eliminate Python GIL overhead.',
+          ],
+          learningOutcomes: [
+            'Build a production-grade FastAPI risk scoring service achieving p99 latency < 35ms.',
+            'Integrate Redis pipelines for instantaneous velocity feature retrieval.',
+            'Implement resilient fallback mechanisms that protect revenue during upstream outages.',
+            'Defend low-latency architecture choices in FinTech system design interviews.',
+          ],
+        },
+        conceptsMarkdown: `### Real-Time Serving, FastAPI & Redis Feature Store
+
+Payment gateways (Visa, Mastercard, Stripe, Adyen) enforce hard timeouts: the entire authorization request must complete in **under 100 milliseconds**.
+Within that 100ms, your ML risk engine is allocated **30 to 50ms maximum**:
+- 10ms: Network transit & JSON parsing
+- 5ms: In-memory feature retrieval (Redis)
+- 15ms: Model inference (XGBoost / Treelite)
+- 10ms: Rule evaluation & decision emission
+
+\`\`\`python
+# Example Redis pipeline for sub-5ms velocity lookup
+async def get_velocity_features(redis_client, user_id: str):
+    pipe = redis_client.pipeline()
+    pipe.zcount(f"tx:{user_id}", "-inf", "+inf") # 10-minute count
+    pipe.hget(f"user:{user_id}", "avg_amount")
+    results = await pipe.execute()
+    return {"tx_count_10m": results[0], "avg_amount": float(results[1] or 0.0)}
+\`\`\`
+`,
+        examples: [
+          {
+            title: 'FastAPI Low-Latency Evaluation Endpoint',
+            codeSnippet: `from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+import time
+
+app = FastAPI()
+
+class TransactionRequest(BaseModel):
+    transaction_id: str
+    user_id: str
+    card_token: str
+    amount: float
+    mcc: str
+
+@app.post("/v1/evaluate-transaction")
+async def evaluate_transaction(req: TransactionRequest):
+    start = time.perf_counter()
+    # 1. Fetch velocity from Redis (< 5ms)
+    # 2. Score with compiled model (< 15ms)
+    risk_score = 0.012 # Example calibrated probability
+    
+    decision = "APPROVE" if risk_score < 0.15 else ("CHALLENGE_3DS" if risk_score < 0.60 else "DECLINE")
+    latency_ms = (time.perf_counter() - start) * 1000
+    
+    return {
+        "transaction_id": req.transaction_id,
+        "risk_score": risk_score,
+        "decision": decision,
+        "latency_ms": round(latency_ms, 2)
+    }`,
+            explanation: 'Sub-30ms decision endpoint returning approve, 3D secure step-up, or decline.',
+          },
+        ],
+        commonMistakes: [
+          'Querying SQL relational databases synchronously during payment authorization.',
+          'Relying on raw Python tree prediction when Treelite or ONNX runtime provides a 10x speedup.',
+          'Lacking a fallback heuristic rule engine when Redis encounters temporary network blips.',
+        ],
+        checkQuestions: [
+          {
+            question: 'Why is Redis preferred over PostgreSQL for real-time fraud feature stores?',
+            answer: 'Because Redis stores data entirely in RAM with single-digit millisecond latency, meeting the strict <50ms payment authorization network SLAs.',
+          },
+        ],
+        approvedResources,
+      };
+    }
+
+    // 10. Default / Dynamic Content Generator for other topics
     const cleanTitle = topicKey
       .split('_')
       .map(w => w.charAt(0).toUpperCase() + w.slice(1))

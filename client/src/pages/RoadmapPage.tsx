@@ -376,6 +376,429 @@ function getEnrichedLearningObjectives(node: any): DetailedLearningObjectives {
     };
   }
 
+  // Applied Mathematics, Probability & Financial Risk Statistics
+  if (key.includes('math') || key.includes('prob') || key.includes('stats') || key.includes('bayes')) {
+    return {
+      summary:
+        'In this topic, you will learn the mathematical and statistical foundations required for FinTech risk engineering. Under severe class rarity (<0.1% fraud), standard assumptions fail. You will master Bayes\' Theorem to conquer the base-rate fallacy, model fat-tailed financial dollar amounts using Pareto distributions, and conduct hypothesis tests to validate risk rule rollouts without causing revenue loss.',
+      coreConcepts: [
+        'Bayes\' Theorem and the Base-Rate Fallacy in rare-event detection',
+        'Modeling heavy-tailed and Pareto transaction amount distributions',
+        'Prior vs Posterior probability updates when combining multiple independent risk signals',
+        'Hypothesis testing (A/B testing risk rules) and Statistical Power calculation',
+        'Log-odds and logistic transformations for scoring engines',
+      ],
+      subtopics: [
+        {
+          title: 'The Base-Rate Fallacy & Bayes Theorem',
+          description:
+            'Why a 99% accurate model creates overwhelming false alerts when the prior probability of fraud is 0.1%, and how to compute exact posterior odds.',
+        },
+        {
+          title: 'Heavy-Tailed & Extreme Value Distributions',
+          description:
+            'Understanding why transaction amounts follow log-normal and Pareto power-law distributions rather than standard Gaussian bell curves.',
+        },
+        {
+          title: 'Statistical Testing for Risk Rules',
+          description:
+            'Conducting two-sample hypothesis tests to measure whether a new decline rule genuinely reduces chargeback rates without harming checkout conversion.',
+        },
+        {
+          title: 'Log-Odds & Calibration Scoring',
+          description:
+            'Transforming probabilities into credit/risk scorecards using log-odds scaling used across credit bureaus and payment networks.',
+        },
+      ],
+      focusAreas: [
+        'Always calculate the posterior probability using the true base rate; never rely on raw model confidence scores alone.',
+        'Beware of assuming normal distributions for dollar amounts — 80% of fraud losses often come from the top 1% of transaction amounts.',
+        'Ensure sample sizes in risk A/B tests have sufficient statistical power before rolling out aggressive blocking rules.',
+      ],
+      learningOutcomes: [
+        'Compute Bayesian posterior risk probabilities accurately under extreme class imbalance.',
+        'Fit power-law distributions to financial transaction losses and determine optimal cutoff points.',
+        'Design and evaluate risk rule experiments using rigorous statistical hypothesis tests.',
+        'Ace technical screening questions on probability and statistics at top FinTech firms.',
+      ],
+    };
+  }
+
+  // Feature Engineering & Velocity Windows
+  if (key.includes('velocity') || key.includes('feature_engineering')) {
+    return {
+      summary:
+        'In this topic, you will learn how to engineer domain-specific velocity counters and behavioral discrepancy signals. In FinTech, raw transaction attributes (like $45 at 2:00 PM) carry minimal signal on their own. The true predictive power comes from historical context: how many cards this device used in the past 10 minutes, geographical distance between consecutive swipes, and sudden spikes over historical baselines.',
+      coreConcepts: [
+        'Rolling sliding-window counters (transaction count, sum, max over 5m, 1h, 24h, 7d)',
+        'Geographical velocity using the Haversine distance formula to catch physically impossible travel (speed > 500 mph)',
+        'Entity linkage and ratio features (distinct cards per IP, distinct emails per device fingerprint)',
+        'Categorical encoding for high-cardinality values (Merchant Category Codes - MCC, ZIP codes)',
+        'Preventing future data leakage when constructing time-series feature pipelines',
+      ],
+      subtopics: [
+        {
+          title: 'Sliding-Window Velocity Counters',
+          description:
+            'Computing rolling aggregates per user, card, and device to detect high-frequency card testing and bot attacks.',
+        },
+        {
+          title: 'Geographical Haversine Velocity',
+          description:
+            'Calculating distance and speed between consecutive swipes to detect cloned cards used across cities or continents simultaneously.',
+        },
+        {
+          title: 'Device & IP Fingerprint Ratios',
+          description:
+            'Tracking many-to-one and one-to-many relationships (e.g. 50 different cards attempted from one IP address within an hour).',
+        },
+        {
+          title: 'Out-of-Fold Target Encoding',
+          description:
+            'Encoding high-cardinality merchant categories without overfitting or leaking target label information into validation sets.',
+        },
+      ],
+      focusAreas: [
+        'Never use global aggregations that peek into future rows; all velocity windows must be strictly backward-looking from the transaction timestamp.',
+        'Cache rolling counters in memory (Redis) rather than computing expensive multi-table scans on every live transaction.',
+        'Handle edge cases for new users with zero transaction history using population fallback priors.',
+      ],
+      learningOutcomes: [
+        'Extract high-signal velocity features that boost model PR-AUC by 40%+ over raw columns.',
+        'Implement Haversine geodistance velocity detectors in Python.',
+        'Build Scikit-learn feature engineering transformers with zero lookahead leakage.',
+        'Articulate how Stripe Radar and PayPal engineer behavioral features to interviewers.',
+      ],
+    };
+  }
+
+  // Unsupervised Anomaly Detection & Novelty Filtering
+  if (key.includes('anomaly') || key.includes('novelty') || key.includes('isolation')) {
+    return {
+      summary:
+        'In this topic, you will learn how to detect zero-day fraud attacks and syndicated crime rings without labeled data. Confirmed fraud chargebacks take 60 to 90 days to settle with Visa/Mastercard. During that lag, supervised models are blind. You will master Isolation Forests, Local Outlier Factor, and graph entity clustering to catch novel attack patterns before labels exist.',
+      coreConcepts: [
+        'Why supervised models fail during the 60-90 day chargeback settlement lag',
+        'Isolation Forest mechanics: recursive random partitioning isolating anomalies near the root',
+        'Local Outlier Factor (LOF) for density-based local anomaly scoring',
+        'Graph-based entity resolution and DBSCAN clustering to uncover organized fraud rings',
+        'Tuning contamination rate hyperparameters without ground-truth labels',
+      ],
+      subtopics: [
+        {
+          title: 'The Chargeback Lag Problem',
+          description:
+            'Understanding the 2-3 month feedback delay in financial fraud and why unsupervised novelty detection is mandatory.',
+        },
+        {
+          title: 'Isolation Forest Algorithm',
+          description:
+            'How random trees isolate anomalous feature points with significantly shorter path lengths than normal inliers.',
+        },
+        {
+          title: 'Density & Distance-Based Detectors (LOF)',
+          description:
+            'Detecting transactions that fall into low-density sparse regions compared to their nearest neighbors.',
+        },
+        {
+          title: 'Syndicated Ring Clustering with DBSCAN',
+          description:
+            'Grouping transactions sharing subtle fingerprint tokens (identical browser headers, sequential card numbers) into fraud rings.',
+        },
+      ],
+      focusAreas: [
+        'Remember that anomaly detection flags statistical rarities — some will be legitimate high-value VIP customers, requiring soft challenges (3D Secure) rather than hard declines.',
+        'Contamination parameter must be set conservatively (typically 0.005 to 0.01) to avoid overwhelming manual review queues.',
+        'Normalize and scale numeric dimensions before running distance-based algorithms.',
+      ],
+      learningOutcomes: [
+        'Implement and tune Isolation Forests on streaming transaction datasets.',
+        'Cluster and detect syndicated fraud rings using DBSCAN and entity graphs.',
+        'Defend the dual-layer strategy (supervised + unsupervised) during FinTech architecture interviews.',
+      ],
+    };
+  }
+
+  // XGBoost & Imbalanced Modeling
+  if (key.includes('xgboost') || key.includes('lightgbm') || key.includes('boosting')) {
+    return {
+      summary:
+        'In this topic, you will master Gradient Boosted Decision Trees (GBDT) on extreme class imbalance. XGBoost and LightGBM are the undisputed industry standard across Stripe, Adyen, and PayPal for tabular risk modeling. You will learn to tune scale_pos_weight, implement focal loss, optimize hyperparameters with Optuna, and calibrate raw scores using Isotonic Regression.',
+      coreConcepts: [
+        'Gradient boosting mechanics: sequentially fitting regression trees to pseudo-residuals',
+        'Handling severe class imbalance with scale_pos_weight, focal loss, and max_delta_step',
+        'Hyperparameter optimization (learning_rate, max_depth, colsample_bytree) with Optuna',
+        'Early stopping on validation PR-AUC to prevent overfitting',
+        'Probability calibration with Isotonic Regression and Platt scaling for true risk scores',
+      ],
+      subtopics: [
+        {
+          title: 'GBDT Mechanics & Loss Gradients',
+          description:
+            'Understanding second-order Taylor expansion gradients in XGBoost and why trees excel on tabular data.',
+        },
+        {
+          title: 'Cost-Sensitive Tree Boosting',
+          description:
+            'Penalizing false negatives using scale_pos_weight to force trees to focus on rare fraud instances.',
+        },
+        {
+          title: 'Systematic Optuna Tuning',
+          description:
+            'Automating Bayesian hyperparameter search to maximize PR-AUC while controlling model complexity.',
+        },
+        {
+          title: 'Probability Calibration',
+          description:
+            'Transforming raw GBDT logits into true empirical risk probabilities that accurately reflect financial default odds.',
+        },
+      ],
+      focusAreas: [
+        'Never evaluate tree models on training data or random splits — always use time-series splits to reflect live deployment conditions.',
+        'Uncalibrated model scores cannot be used directly for risk cutoff rules — always calibrate with Isotonic Regression.',
+        'Control tree depth (max_depth 4-6) to prevent trees from memorizing individual fraudster accounts.',
+      ],
+      learningOutcomes: [
+        'Train state-of-the-art XGBoost and LightGBM models on heavily skewed datasets.',
+        'Tune hyperparameters systematically with Optuna maximizing PR-AUC.',
+        'Calibrate predicted probabilities into empirical risk scores.',
+        'Explain gradient boosting trade-offs with confidence in technical interviews.',
+      ],
+    };
+  }
+
+  // Real-Time Serving, FastAPI & Redis Feature Store
+  if (key.includes('realtime') || key.includes('fastapi') || key.includes('redis') || key.includes('serving')) {
+    return {
+      summary:
+        'In this topic, you will learn how to build low-latency real-time inference microservices. Payment card networks enforce strict SLAs: the entire risk decision must execute in under 50ms roundtrip. You will build asynchronous FastAPI services, integrate Redis as an in-memory feature store for 5ms velocity lookups, serialize models with ONNX/Treelite, and build fallback circuit breakers.',
+      coreConcepts: [
+        'Card authorization network SLAs and latency budgets (p99 < 50ms)',
+        'Asynchronous Python microservices with FastAPI, Uvicorn, and Pydantic validation',
+        'In-memory feature stores using Redis pipelines for sub-5ms rolling aggregate lookups',
+        'Model acceleration: serializing tree models with Treelite or ONNX Runtime for 10x faster inference',
+        'Graceful degradation: fallback heuristic rule engines and circuit breakers under load',
+      ],
+      subtopics: [
+        {
+          title: 'Latency Budgeting & Payment SLAs',
+          description:
+            'Deconstructing the 100ms authorization window: network transport, feature lookup, model scoring, and decision response.',
+        },
+        {
+          title: 'FastAPI Microservice Architecture',
+          description:
+            'Building async POST /v1/evaluate-transaction endpoints with strict schema validation and error boundaries.',
+        },
+        {
+          title: 'Redis In-Memory Feature Store',
+          description:
+            'Using Redis hashes and sorted sets with TTL expiration to query rolling 10m velocity in under 3 milliseconds.',
+        },
+        {
+          title: 'Circuit Breakers & Graceful Degradation',
+          description:
+            'Deploying fallback heuristic rules when Redis or the ML service experiences timeouts to prevent checkout blocking.',
+        },
+      ],
+      focusAreas: [
+        'Never perform blocking disk I/O or unindexed database queries inside the request lifecycle.',
+        'Benchmark p99 latency (the slowest 1% of transactions) rather than mean latency, as payment gateways timeout on the tail.',
+        'Serialize models into compiled C-libraries (Treelite) to eliminate Python GIL overhead.',
+      ],
+      learningOutcomes: [
+        'Build a production-grade FastAPI risk scoring service achieving p99 latency < 35ms.',
+        'Integrate Redis pipelines for instantaneous velocity feature retrieval.',
+        'Implement resilient fallback mechanisms that protect revenue during upstream outages.',
+        'Defend low-latency architecture choices in FinTech system design interviews.',
+      ],
+    };
+  }
+
+  // Docker Containerization & Microservices
+  if (key.includes('docker') || key.includes('container')) {
+    return {
+      summary:
+        'In this topic, you will learn how to package machine learning and web services into minimal, secure, and reproducible Docker containers. You will master multi-stage builds, non-root user permissions, layer caching optimization, and Docker Compose orchestration for multi-service environments.',
+      coreConcepts: [
+        'Containerization vs Virtualization: cgroups, namespaces, and lightweight isolation',
+        'Multi-stage Dockerfile architecture separating build dependencies from minimal production runtimes',
+        'Container security: running as non-root users and vulnerability scanning',
+        'Docker Compose orchestration for multi-container stacks (API + Redis + Database)',
+        'Health checks, graceful shutdown signals (SIGTERM), and resource constraints',
+      ],
+      subtopics: [
+        {
+          title: 'Multi-Stage Dockerfile Optimization',
+          description:
+            'Using builder stages to compile C-dependencies and producing slim final production images under 200MB.',
+        },
+        {
+          title: 'Container Security & Hardening',
+          description:
+            'Switching to unprivileged non-root users and scanning images for known CVE vulnerabilities.',
+        },
+        {
+          title: 'Docker Compose Local Orchestration',
+          description:
+            'Spinning up the complete microservice ecosystem (FastAPI, Redis, PostgreSQL) with a single command.',
+        },
+        {
+          title: 'Production Signals & Health Checks',
+          description:
+            'Handling graceful termination signals to finish in-flight risk evaluations before pod shutdown.',
+        },
+      ],
+      focusAreas: [
+        'Never store API keys or database passwords directly inside Docker images or Dockerfiles.',
+        'Order Dockerfile instructions from least-frequently changed to most-frequently changed to maximize build cache reuse.',
+        'Always specify explicit base image tags rather than using :latest.',
+      ],
+      learningOutcomes: [
+        'Write production multi-stage Dockerfiles with minimal attack surfaces.',
+        'Orchestrate multi-service environments with Docker Compose.',
+        'Deploy reproducible containerized services to cloud container runtimes.',
+      ],
+    };
+  }
+
+  // FinTech Regulations, Explainability & Anti-Bias Ethics
+  if (key.includes('compliance') || key.includes('shap') || key.includes('adverse') || key.includes('security')) {
+    return {
+      summary:
+        'In this topic, you will learn regulatory compliance, model explainability, and algorithmic fairness. FinTech companies are legally required by federal law (FCRA, ECOA) to provide Adverse Action reason codes when a transaction or loan is declined. You will master TreeSHAP to calculate exact local feature attributions, anonymize PII data under PCI-DSS, and audit models for demographic parity.',
+      coreConcepts: [
+        'FCRA and ECOA regulatory requirements for Adverse Action notices and reason codes',
+        'Shapley values and TreeSHAP algorithm for exact, axiomatic feature attribution',
+        'PCI-DSS compliance: data tokenization, encryption at rest, and PII masking',
+        'Model Governance and Risk Management (OCC 2011-12 standards)',
+        'Auditing algorithmic fairness: disparate impact ratio and demographic parity',
+      ],
+      subtopics: [
+        {
+          title: 'FCRA Adverse Action & Regulatory Reason Codes',
+          description:
+            'Why declining transactions without compliant human-readable reason codes triggers severe federal penalties.',
+        },
+        {
+          title: 'TreeSHAP Local Explainability',
+          description:
+            'Computing game-theoretic Shapley contributions to identify the top 3 specific reasons a transaction was rejected.',
+        },
+        {
+          title: 'PCI-DSS Data Protection & Tokenization',
+          description:
+            'Masking Primary Account Numbers (PAN) and encrypting cardholder data across all training pipelines.',
+        },
+        {
+          title: 'Algorithmic Fairness & Bias Auditing',
+          description:
+            'Evaluating false rejection rates across different demographic cohorts to ensure fair and equitable model behavior.',
+        },
+      ],
+      focusAreas: [
+        'Never train models directly on raw Primary Account Numbers (PAN) or sensitive cardholder identifiers.',
+        'Reason codes generated by SHAP must be mapped to clear, plain-language business explanations approved by compliance teams.',
+        'Routinely audit model outputs for disparate impact across geographic and demographic groups.',
+      ],
+      learningOutcomes: [
+        'Generate compliant Adverse Action reason codes using TreeSHAP waterfall charts.',
+        'Implement PCI-DSS compliant data masking in feature engineering pipelines.',
+        'Perform disparate impact and fairness audits on machine learning decision engines.',
+        'Impress hiring managers with deep regulatory awareness in FinTech interviews.',
+      ],
+    };
+  }
+
+  // Capstone Project: Real-Time Fraud Detection Pipeline
+  if (key.includes('capstone') || key.includes('project') || key.includes('pipeline')) {
+    return {
+      summary:
+        'In this capstone project, you will build and deploy a complete, production-grade Real-Time Fraud Detection Engine. This is your flagship proof-of-work asset. You will assemble the entire stack: SQL ledger queries, custom velocity feature transformers, calibrated XGBoost models, an asynchronous FastAPI microservice with Redis in-memory velocity counters, all containerized with Docker Compose with automated tests and latency benchmarks.',
+      coreConcepts: [
+        'Architecting an end-to-end production ML system solving real business problems',
+        'Integrating Redis feature store, calibrated tree models, and sub-50ms FastAPI serving',
+        'Containerizing the full stack with Docker Compose and automated testing',
+        'Measuring and documenting business impact: PR-AUC curves, cost matrices, and latency reports',
+        'Authoring an executive technical README with architecture diagrams and reproducible benchmarks',
+      ],
+      subtopics: [
+        {
+          title: 'System Architecture & Data Contract',
+          description:
+            'Designing the modular microservice blueprint and Pydantic request/response schemas.',
+        },
+        {
+          title: 'Feature Store & Model Integration',
+          description:
+            'Wiring Redis sliding-window counters into the calibrated XGBoost inference engine.',
+        },
+        {
+          title: 'Latency Benchmarking & Load Testing',
+          description:
+            'Running load tests simulating 500 requests/second and validating p99 response times under 40ms.',
+        },
+        {
+          title: 'Documentation & Portfolio Presentation',
+          description:
+            'Creating an industry-standard GitHub repository with architecture diagrams, setup scripts, and video walkthrough.',
+        },
+      ],
+      focusAreas: [
+        'The repository must be reproducible with a single docker-compose up command.',
+        'Include clear evaluation charts (PR-AUC, ROC, Confusion Matrix) and a financial cost-savings estimate.',
+        'Write automated pytest tests verifying both approving legitimate transactions and declining fraudulent spikes.',
+      ],
+      learningOutcomes: [
+        'Deliver a complete, production-ready fraud mitigation engine.',
+        'Prove your real-world capability with verifiable latency benchmarks and clean code.',
+        'Stand out to hiring managers with an indisputable portfolio piece that passes senior technical reviews.',
+      ],
+    };
+  }
+
+  // FinTech Scenario & Technical Mock Interview
+  if (key.includes('interview') || key.includes('readiness') || key.includes('milestone')) {
+    return {
+      summary:
+        'In this milestone, you will simulate high-stakes technical and behavioral interview loops for FinTech risk engineering roles. You will practice defending architectural decisions, explaining trade-offs between false declines and fraud losses to VP-level stakeholders, answering diagnostic questions on payment SLAs, and solving live coding system design challenges.',
+      coreConcepts: [
+        'Communicating precision vs recall trade-offs in terms of dollar revenue and customer lifetime value',
+        'FinTech system design: architecting low-latency, high-availability risk engines under payment SLAs',
+        'Handling edge cases: network timeouts, cold starts, and emerging bot carding attacks',
+        'Defending model validation strategies and preventing data leakage under cross-examination',
+        'Structuring behavioral answers using the STAR method for senior engineering competencies',
+      ],
+      subtopics: [
+        {
+          title: 'Business Loss & Risk Trade-Off Scenarios',
+          description:
+            'Explaining how you balance false positive decline friction against chargeback losses to non-technical risk executives.',
+        },
+        {
+          title: 'System Design for Low-Latency Risk',
+          description:
+            'Whiteboarding the complete architecture: Redis caching, model export, fallback rule engines, and Kafka event streaming.',
+        },
+        {
+          title: 'Live Diagnostic Problem Solving',
+          description:
+            'Diagnosing sudden drops in precision or spikes in chargebacks during interactive interview prompts.',
+        },
+      ],
+      focusAreas: [
+        'Never speak purely about technical metrics like loss or accuracy — always connect metrics to financial business outcomes.',
+        'Structure your answers clearly: problem formulation, constraints, architecture options, trade-offs, and final decision.',
+        'Show intellectual humility and explain how you monitor and iterate on systems after deployment.',
+      ],
+      learningOutcomes: [
+        'Communicate technical and business trade-offs with senior executive polish.',
+        'Ace FinTech ML system design and behavioral interview rounds.',
+        'Secure job offers at leading FinTech and technology companies with confidence.',
+      ],
+    };
+  }
+
   // Dynamic / Thoughtful fallback for any other topic
   const cleanTitle = (node?.title || 'Core Topic')
     .replace(/[_-]/g, ' ')
@@ -951,18 +1374,59 @@ export const RoadmapPage: React.FC = () => {
             )}
           </div>
 
-          {/* Why Needed Panel */}
-          <div className="p-4 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/60 text-xs space-y-2">
-            <div className="flex items-center gap-1.5 font-bold text-indigo-900 dark:text-indigo-200">
-              <ShieldCheck className="w-4 h-4 text-indigo-600" />
-              <span>Why am I learning this?</span>
+          {/* Why Needed Panel - Industry Grounding & Market Evidence */}
+          {(() => {
+            const parsedWhy = typeof selectedNode.whyNeeded === 'string'
+              ? JSON.parse(selectedNode.whyNeeded)
+              : selectedNode.whyNeeded || {};
+            const evidence = parsedWhy.evidence || [];
+            const scorePercent = parsedWhy.confidenceScore ? Math.round(parsedWhy.confidenceScore * 100) : 96;
+
+            return (
+              <div className="p-4 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/60 text-xs space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 font-bold text-indigo-900 dark:text-indigo-200">
+                    <ShieldCheck className="w-4 h-4 text-indigo-600" />
+                    <span>Why am I learning this?</span>
+                  </div>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                    {parsedWhy.confidenceLabel || 'HIGH'} Relevance ({scorePercent}%)
+                  </span>
+                </div>
+                <p className="text-slate-700 dark:text-slate-300 leading-relaxed font-medium">
+                  {parsedWhy.why || 'Direct prerequisite required for target career mastery.'}
+                </p>
+                {evidence.length > 0 && (
+                  <div className="pt-2 border-t border-indigo-100 dark:border-indigo-900/60 space-y-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 block">
+                      Real Industry Evidence & Demand:
+                    </span>
+                    <ul className="space-y-1 text-[11px] text-slate-600 dark:text-slate-300">
+                      {evidence.map((ev: string, idx: number) => (
+                        <li key={idx} className="flex items-start gap-1.5">
+                          <span className="text-indigo-500 font-bold">•</span>
+                          <span>{ev}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
+          {/* Industry Proof Requirement (if project or proof) */}
+          {selectedNode.proofRequirement && (
+            <div className="p-4 rounded-2xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800 text-xs space-y-1.5">
+              <div className="flex items-center gap-1.5 font-bold text-amber-900 dark:text-amber-200">
+                <Award className="w-4 h-4 text-amber-600" />
+                <span>Verifiable Proof Requirement</span>
+              </div>
+              <p className="text-amber-800 dark:text-amber-300 text-[11px] leading-relaxed">
+                {selectedNode.proofRequirement}
+              </p>
             </div>
-            <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
-              {typeof selectedNode.whyNeeded === 'string'
-                ? JSON.parse(selectedNode.whyNeeded).why
-                : selectedNode.whyNeeded?.why || 'Direct prerequisite required for target career mastery.'}
-            </p>
-          </div>
+          )}
 
           {/* Learning Objectives Detailed Study Guide */}
           {(() => {

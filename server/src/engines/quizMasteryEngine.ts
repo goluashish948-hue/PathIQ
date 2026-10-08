@@ -592,6 +592,143 @@ const SQL_WINDOW_QUESTIONS: QuizQuestionItem[] = [
   },
 ];
 
+// 5. Applied Probability & Financial Risk Statistics Question Bank
+const FINTECH_STATS_QUESTIONS: QuizQuestionItem[] = [
+  {
+    id: 'fstat_1',
+    type: 'MCQ',
+    difficulty: 'INTERMEDIATE',
+    conceptTag: 'Base-Rate Fallacy',
+    questionText: 'Given a fraud base rate of 0.1%, a model with 95% recall and 2% false positive rate flags a transaction. What is the approximate probability it is genuinely fraudulent?',
+    options: ['~4.5%', '95.0%', '47.5%', '98.0%'],
+    correctAnswer: '~4.5%',
+    explanation: 'Using Bayes\' theorem: (0.95 * 0.001) / [(0.95 * 0.001) + (0.02 * 0.999)] ≈ 0.0454 (4.54%). The huge legitimate majority generates far more false alarms than true positives.',
+  },
+  {
+    id: 'fstat_2',
+    type: 'MCQ',
+    difficulty: 'INTERMEDIATE',
+    conceptTag: 'Fat-Tailed Distributions',
+    questionText: 'Why is assuming a Gaussian normal distribution for financial transaction amounts dangerous in risk systems?',
+    options: [
+      'Financial loss amounts follow fat-tailed Pareto distributions where a tiny fraction of transactions account for 80%+ of total loss dollars',
+      'Gaussian distributions cannot be calculated in Python',
+      'Transaction amounts can never be fractional',
+      'Financial institutions only permit uniform distributions',
+    ],
+    correctAnswer: 'Financial loss amounts follow fat-tailed Pareto distributions where a tiny fraction of transactions account for 80%+ of total loss dollars',
+    explanation: 'Financial transactions exhibit extreme skewness and heavy Pareto tails. Gaussian assumptions drastically underestimate tail risk.',
+  },
+  {
+    id: 'fstat_3',
+    type: 'MCQ',
+    difficulty: 'ADVANCED',
+    conceptTag: 'Statistical Power in Risk A/B Tests',
+    questionText: 'When testing a new decline rule on card payments, why must the experiment run until achieving sufficient Statistical Power?',
+    options: [
+      'Because fraud events are rare (<0.1%), so small sample sizes yield noisy, misleading chargeback rates without statistical significance',
+      'Payment processors terminate connections after 5 minutes',
+      'To verify the SQL server clock synchronization',
+      'Because A/B testing is prohibited by Visa without 100% power',
+    ],
+    correctAnswer: 'Because fraud events are rare (<0.1%), so small sample sizes yield noisy, misleading chargeback rates without statistical significance',
+    explanation: 'Under extreme event rarity, sample variances are high. Without sufficient power, random noise masquerades as rule performance.',
+  },
+  {
+    id: 'fstat_4',
+    type: 'MCQ',
+    difficulty: 'BEGINNER',
+    conceptTag: 'Log-Odds Scoring',
+    questionText: 'What mathematical function converts probability p into log-odds log(p / (1 - p)) commonly used in credit scorecards?',
+    options: ['Logit function', 'Softmax function', 'Relu function', 'Cosine similarity'],
+    correctAnswer: 'Logit function',
+    explanation: 'The logit function maps probabilities from (0, 1) to (-inf, +inf) as log-odds, the foundation of linear risk scorecards.',
+  },
+];
+
+// 6. Velocity Feature Engineering Question Bank
+const VELOCITY_FEATURE_QUESTIONS: QuizQuestionItem[] = [
+  {
+    id: 'vel_1',
+    type: 'MCQ',
+    difficulty: 'INTERMEDIATE',
+    conceptTag: 'Preventing Lookahead Leakage',
+    questionText: 'When calculating a 1-hour rolling transaction count for training data, why must you set closed="left" in Pandas?',
+    options: [
+      'To exclude the current transaction from its own historical aggregate, preventing lookahead data leakage',
+      'Because left joins are faster than right joins in RAM',
+      'To sort the DataFrame from left to right',
+      'To include tomorrow\'s transactions in today\'s score',
+    ],
+    correctAnswer: 'To exclude the current transaction from its own historical aggregate, preventing lookahead data leakage',
+    explanation: 'Including the current row in its own velocity aggregate creates data leakage during feature generation.',
+  },
+  {
+    id: 'vel_2',
+    type: 'MCQ',
+    difficulty: 'ADVANCED',
+    conceptTag: 'Haversine Velocity',
+    questionText: 'A card is swiped in Tokyo and then 20 minutes later in San Francisco. What feature reliably catches this fraud vector?',
+    options: [
+      'Haversine distance speed calculation indicating impossible physical travel (> 5,000 mph)',
+      'Total transaction dollar sum',
+      'Merchant category name length',
+      'User age calculation',
+    ],
+    correctAnswer: 'Haversine distance speed calculation indicating impossible physical travel (> 5,000 mph)',
+    explanation: 'Calculating the Haversine speed between consecutive geographical coordinates detects cloned cards across distant locations.',
+  },
+  {
+    id: 'vel_3',
+    type: 'MCQ',
+    difficulty: 'INTERMEDIATE',
+    conceptTag: 'In-Memory Feature Stores',
+    questionText: 'Why do production payment risk engines use Redis rather than PostgreSQL for retrieving live velocity features?',
+    options: [
+      'Redis operates in-memory with sub-5ms latency, meeting the strict <50ms payment authorization SLA',
+      'Redis is free whereas PostgreSQL charges per query',
+      'PostgreSQL does not support numbers',
+      'Redis guarantees 100% accuracy while SQL is approximate',
+    ],
+    correctAnswer: 'Redis operates in-memory with sub-5ms latency, meeting the strict <50ms payment authorization SLA',
+    explanation: 'Disk-backed relational database queries under high concurrency cannot meet sub-50ms payment network timeouts.',
+  },
+];
+
+// 7. Unsupervised Anomaly Detection Question Bank
+const ANOMALY_DETECTION_QUESTIONS: QuizQuestionItem[] = [
+  {
+    id: 'anom_1',
+    type: 'MCQ',
+    difficulty: 'INTERMEDIATE',
+    conceptTag: 'Chargeback Lag',
+    questionText: 'Why is unsupervised anomaly detection critical in FinTech even when you have historical fraud labels?',
+    options: [
+      'Because confirmed chargeback labels take 60-90 days to settle, leaving supervised models blind to new attacks during that window',
+      'Because unsupervised models never require compute resources',
+      'Because Visa does not allow supervised models in production',
+      'Because labeled datasets cannot be split into train and test folds',
+    ],
+    correctAnswer: 'Because confirmed chargeback labels take 60-90 days to settle, leaving supervised models blind to new attacks during that window',
+    explanation: 'The 60-90 day chargeback settlement lag means supervised models cannot learn novel zero-day attack patterns in real time.',
+  },
+  {
+    id: 'anom_2',
+    type: 'MCQ',
+    difficulty: 'ADVANCED',
+    conceptTag: 'Isolation Forest Mechanics',
+    questionText: 'How does an Isolation Forest differentiate between normal transaction points and anomalous outliers?',
+    options: [
+      'Anomalies lie in sparse regions and require significantly fewer random partition splits to isolate near the tree root',
+      'Anomalies always have negative transaction amounts',
+      'Normal points are always sorted alphabetically',
+      'By running a neural network autoencoder in reverse',
+    ],
+    correctAnswer: 'Anomalies lie in sparse regions and require significantly fewer random partition splits to isolate near the tree root',
+    explanation: 'Because anomalies are few and different, random recursive partitioning cuts them off in short tree path lengths.',
+  },
+];
+
 export class QuizMasteryEngine {
   public generateTopicQuiz(
     topicKey: string,
@@ -615,7 +752,40 @@ export class QuizMasteryEngine {
       );
     }
 
-    // 2. SQL JOINs topic match
+    // 2. Applied Probability & Financial Risk Statistics
+    if (key.includes('math') || key.includes('prob') || key.includes('stats') || key.includes('bayes')) {
+      return this.assembleTopicQuiz(
+        'fintech_math_prob_stats',
+        'Applied Probability & Financial Risk Statistics',
+        FINTECH_STATS_QUESTIONS,
+        difficulty,
+        studentContext
+      );
+    }
+
+    // 3. Velocity Feature Engineering
+    if (key.includes('velocity') || key.includes('feature_engineering')) {
+      return this.assembleTopicQuiz(
+        'feature_engineering_fraud',
+        'Feature Engineering & Velocity Indicators',
+        VELOCITY_FEATURE_QUESTIONS,
+        difficulty,
+        studentContext
+      );
+    }
+
+    // 4. Unsupervised Anomaly Detection
+    if (key.includes('anomaly') || key.includes('novelty') || key.includes('isolation')) {
+      return this.assembleTopicQuiz(
+        'anomaly_detection_fraud',
+        'Unsupervised Anomaly Detection & Novelty Detection',
+        ANOMALY_DETECTION_QUESTIONS,
+        difficulty,
+        studentContext
+      );
+    }
+
+    // 5. SQL JOINs topic match
     if (key.includes('sql_join') || (key.includes('sql') && key.includes('join')) || key === 'sql_joins') {
       return this.assembleTopicQuiz(
         'sql_joins',
@@ -626,8 +796,8 @@ export class QuizMasteryEngine {
       );
     }
 
-    // 3. Machine Learning Classification & Imbalance topic match
-    if (key.includes('machine_learning') || key.includes('ml_') || key.includes('classification')) {
+    // 6. Machine Learning Classification & Imbalance topic match
+    if (key.includes('machine_learning') || key.includes('ml_') || key.includes('classification') || key.includes('xgboost')) {
       return this.assembleTopicQuiz(
         'machine_learning_basics',
         'Machine Learning Classification, Imbalance & Evaluation',
@@ -637,7 +807,7 @@ export class QuizMasteryEngine {
       );
     }
 
-    // 4. SQL Window Functions & Advanced Analytics
+    // 7. SQL Window Functions & Advanced Analytics
     if (key.includes('window') || key.includes('sql_advanced_analytics') || key.includes('sql')) {
       return this.assembleTopicQuiz(
         'sql_window_functions',

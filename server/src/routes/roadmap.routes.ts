@@ -126,15 +126,26 @@ router.get('/active', requireAuth, async (req: Request, res: Response, next) => 
     });
 
     if (!roadmap) {
-      // Auto-generate default roadmap for seamless initial experience
-      const user = await prisma.user.findUnique({ where: { id: userId }, include: { studentProfile: true } });
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        include: {
+          studentProfile: {
+            include: { studentSkills: { include: { skill: true } } },
+          },
+        },
+      });
       const career = user?.studentProfile?.targetCareer || 'Fraud Detection ML Engineer in FinTech';
       const hours = user?.studentProfile?.availableWeeklyHours || 10;
+      const studentSkills = (user?.studentProfile?.studentSkills || []).map(s => ({
+        name: s.skill.name,
+        effectiveLevel: s.effectiveLevel,
+      }));
       const plan = graphRoadmapEngine.generateRoadmap({
         targetCareer: career,
         targetDomain: 'Technology & IT',
         weeklyHours: hours,
         trackType: 'STRONG',
+        studentSkills,
       });
 
       const newRoadmap = await prisma.roadmap.create({
