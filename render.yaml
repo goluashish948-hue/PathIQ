@@ -1,0 +1,29 @@
+services:
+  # 1. Full-Stack Unified Service (Runs API + Serves Client SPA)
+  - type: web
+    name: pathiq-web
+    env: node
+    plan: free
+    buildCommand: npm install && npm run build && cd server && npx prisma db push && npm run seed
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        value: file:./dev.db
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: REFRESH_TOKEN_EXPIRES_IN
+        value: 30d
+      - key: AI_PROVIDER
+        value: mock
+      - key: STORAGE_DRIVER
+        value: local
+      - key: LOCAL_STORAGE_PATH
+        value: ./uploads
+      - key: SANDBOX_MODE
+        value: disposable-sqlite

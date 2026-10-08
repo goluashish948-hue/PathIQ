@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
 import apiRouter from './routes/index.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
@@ -27,6 +28,29 @@ app.use('/api/v1/storage', express.static(uploadDir));
 
 // API routes
 app.use('/api/v1', apiRouter);
+
+// Serve frontend static build if present (Unified full-stack production deployment)
+const clientDistCandidates = [
+  path.resolve(process.cwd(), '../client/dist'),
+  path.resolve(process.cwd(), './client/dist'),
+  path.resolve(process.cwd(), './client-dist'),
+];
+
+let staticClientDir: string | null = null;
+for (const cand of clientDistCandidates) {
+  if (fs.existsSync(cand)) {
+    staticClientDir = cand;
+    break;
+  }
+}
+
+if (staticClientDir) {
+  app.use(express.static(staticClientDir));
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api')) return next();
+    res.sendFile(path.join(staticClientDir!, 'index.html'));
+  });
+}
 
 // Error handling middleware
 app.use(errorHandler);
